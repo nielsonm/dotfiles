@@ -1,0 +1,23 @@
+[user]
+  name = Michael Nielson
+  email = michael@opensourcery.com
+[github]
+  user = nielsonm
+[color]
+  ui = true
+[url "git+ssh://nielsonm@git.drupal.org/project/"]
+  insteadOf = dm:
+
+
+[alias]
+  s = status
+  a = !git add -p . && git diff --staged
+  ds = diff --staged
+  chp = checkout -p
+  cm = commit -m
+  pl = pull --ff-only
+  lg = log --all --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%ci) %C(bold blue)<%an>%Creset' --abbrev-commit
+  patch = format-patch --stdout HEAD~1
+  rpatch = reset --hard HEAD~1
+[branch]
+  autosetuprebase = always
