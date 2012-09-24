@@ -1,0 +1,1 @@
+/home/michael/play/vim-syntax/drupal-info/drupal-info.vim
