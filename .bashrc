@@ -117,12 +117,12 @@ if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
 fi
 
 # Aliases
-alias tun='pkill -f gargravarr-tunnels; ssh -fN -L 6667:localhost:6667 gargravarr -i /home/michael/.ssh/2011_michael_id_rsa -o ControlMaster=no gargravarr-tunnels'
+alias tun='pkill -f gargravarr-tunnels; ssh -fN -L 6667:localhost:6667 gargravarr -i /home/mike/.ssh/2011_michael_id_rsa -o ControlMaster=no gargravarr-tunnels'
 alias o='gnome-open'
 alias cvs_stat='cvs stat | grep File | grep -v Up-to-date'
 
 # For drush make, export http_proxy for use with squid.
-export http_proxy=http://localhost:3128
+#export http_proxy=http://localhost:3128
 export ftp_proxy=http://localhost:3128
 
 # Set vim to default terminal editor
@@ -134,11 +134,21 @@ alias sniff='phpcs --standard=Drupal --extensions=php,module,inc,install,test,pr
 # Output MOTD
 #cat /etc/motd
 
-
-
+complete -F get_showoff_commands
+function get_showoff_commands()
+{
+  if [ -z $2 ] ; then
+    COMPREPLY=(`showoff help -c`)
+  else
+    COMPREPLY=(`showoff help -c $2`)
+  fi
+}
 
 export PERL_LOCAL_LIB_ROOT="/home/michael/perl5";
 export PERL_MB_OPT="--install_base /home/michael/perl5";
 export PERL_MM_OPT="INSTALL_BASE=/home/michael/perl5";
 export PERL5LIB="/home/michael/perl5/lib/perl5/x86_64-linux-gnu-thread-multi:/home/michael/perl5/lib/perl5";
-export PATH="/home/michael/perl5/bin:$PATH";
+export GEM_PATH="/usr/lib/ruby1.9.1/gems/1.9.1/"
+export GEM_PATH="/var/lib/gems/1.9.1/gems"
+export PATH="/home/michael/perl5/bin:/var/lib/gems/1.9.1/bin:$PATH";
+export PATH=$HOME/.composer/vendor/bin:$PATH
