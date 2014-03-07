@@ -175,3 +175,4 @@ $options['shell-aliases']['pwdadmin'] = 'upwd admin --password=admin';
 $options['shell-aliases']['frac'] = '!drush -y fra && drush cc all';
 $options['shell-aliases']['madmin'] = '!drush -y dis overlay toolbar && drush en -y diff admin_menu_toolbar devel && drush cc all';
 $options['shell-aliases']['radmin'] = '!drush -y en overlay toolbar && drush dis -y diff admin_menu devel && drush cc all';
+$options['shell-aliases']['cca'] = 'cc all';
