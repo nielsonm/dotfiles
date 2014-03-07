@@ -9,7 +9,7 @@ set tabstop=2
 colorscheme desert
 syntax on
 
-setlocal spell spelllang=en_us
+"setlocal spell spelllang=en_us
 autocmd BufRead,BufNewFile *.md setlocal spell
 imap <F9> <C-o>:setlocal spell! spelllang=en_us<CR>
 
