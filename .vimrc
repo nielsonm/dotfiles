@@ -21,23 +21,8 @@ let php_parent_error_close = 1
 " let php_folding = 1
 
 if has("autocmd")
-  " Drupal's PHP file extensions
-  augroup module
-    autocmd BufRead,BufNewFile *.engine set filetype=php
-    autocmd BufRead,BufNewFile *.inc set filetype=php
-    autocmd BufRead,BufNewFile *.install set filetype=php
-    autocmd BufRead,BufNewFile *.module set filetype=php
-    autocmd BufRead,BufNewFile *.profile set filetype=php
-    autocmd BufRead,BufNewFile *.test set filetype=php
-    autocmd BufRead,BufNewFile *.theme set filetype=php
-    autocmd BufRead,BufNewFile *.view set filetype=php
-  augroup END
   augroup lesscss
     autocmd BufRead,BufNewFile *.less set filetype=less
-  augroup END
-  augroup info
-    autocmd BufRead,BufNewFile *.info set filetype=drupal-info
-    autocmd BufRead,BufNewFile *.make set filetype=drupal-info
   augroup END
 endif
 
