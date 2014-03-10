@@ -59,7 +59,7 @@ endfunction
 "match OverLength '\%81v.*'
 
 
-let g:syntastic_phpcs_conf=" --standard=Drupal --extensions=php,module,inc,install,test,profile,theme"
+"let g:syntastic_phpcs_conf=" --standard=Drupal --extensions=php,module,inc,install,test,profile,theme"
 
 " from https://github.com/spf13/spf13-vim/blob/master/.vimrc
 if has('statusline')
