@@ -61,6 +61,8 @@ endfunction
 
 let g:syntastic_php_phpcs_args=" --standard=Drupal --extensions=php,module,inc,install,test,profile,theme"
 let g:syntastic_php_checkers = ['phpcs', 'php', 'phpmd']
+"JSHint syntastic checker.
+let g:syntastic_javascript_checkers = ['jshint']
 
 " from https://github.com/spf13/spf13-vim/blob/master/.vimrc
 if has('statusline')
