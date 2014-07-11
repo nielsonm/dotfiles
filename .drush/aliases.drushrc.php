@@ -84,6 +84,7 @@ $gargravarr = array(
   'pinatubo',
   'qualibou',
   'rainier',
+  'reventador',
   'regionalprograms',
   'shasta',
   'sotara',
