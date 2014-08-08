@@ -152,3 +152,4 @@ export GEM_PATH="/usr/lib/ruby1.9.1/gems/1.9.1/"
 export GEM_PATH="/var/lib/gems/1.9.1/gems"
 export PATH="/home/michael/perl5/bin:/var/lib/gems/1.9.1/bin:$PATH";
 export PATH=$HOME/.composer/vendor/bin:$PATH
+. ~/bash_prompt.sh
