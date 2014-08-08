@@ -134,15 +134,16 @@ alias sniff='phpcs --standard=Drupal --extensions=php,module,inc,install,test,pr
 # Output MOTD
 #cat /etc/motd
 
-complete -F get_showoff_commands
-function get_showoff_commands()
-{
-  if [ -z $2 ] ; then
-    COMPREPLY=(`showoff help -c`)
-  else
-    COMPREPLY=(`showoff help -c $2`)
-  fi
-}
+# Showoff command autocomplete  https://github.com/ramnathv/slidifyLibraries/tree/master/inst/libraries/frameworks/showoff#bash-completion
+#complete -F get_showoff_commands
+#function get_showoff_commands()
+#{
+#  if [ -z $2 ] ; then
+#    COMPREPLY=(`showoff help -c`)
+#  else
+#    COMPREPLY=(`showoff help -c $2`)
+#  fi
+#}
 
 export PERL_LOCAL_LIB_ROOT="/home/michael/perl5";
 export PERL_MB_OPT="--install_base /home/michael/perl5";
