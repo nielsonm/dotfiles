@@ -85,3 +85,6 @@ endif
   cmap WQ wq
   cmap wQ wq
   cmap Q q
+
+" Stripping trailing whitespace
+autocmd FileType c,cpp,java,php autocmd BufWritePre <buffer> :%s/\s\+$//e
