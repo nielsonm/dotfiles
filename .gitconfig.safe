@@ -16,7 +16,11 @@
   chp = checkout -p
   cm = commit -m
   pl = pull --ff-only
-  lg = log --all --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%ci) %C(bold blue)<%an>%Creset' --abbrev-commit
+  #    remote & local graph          change to red, abbrev SHA  - yellow refname subject green committer date, ISO 8601 format boldblue authorname
+  lg = log --all --graph   --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%ci) %C(bold blue)<%an>%Creset' --abbrev-commit
+  #                                                                   authorname              relative commit date
+  lgs = log --graph        --pretty=format:'%Cred%h%Creset - %C(yellow)%an%Creset - %s %Cgreen(%cr)%Creset' --abbrev-commit --date=relative
+  lgm = log  --all --graph --pretty=format:'%Cred%h%Creset - %C(yellow)%an%Creset - %s %Cgreen(%cr)%Creset' --abbrev-commit --date=relative --author michael@opensourcery.com
   patch = format-patch --stdout HEAD~1
   rpatch = reset --hard HEAD~1
 [branch]
