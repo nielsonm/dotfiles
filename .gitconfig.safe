@@ -24,4 +24,4 @@
   patch = format-patch --stdout HEAD~1
   rpatch = reset --hard HEAD~1
 [branch]
-  autosetuprebase = always
+; autosetuprebase = always
