@@ -1,6 +1,6 @@
 [user]
-  name = Michael Nielson
-  email = michael@opensourcery.com
+	name = Michael Nielson
+	email = mnielson@phase2technology.com
 [github]
   user = nielsonm
 [color]
@@ -11,7 +11,7 @@
 
 [alias]
   s = status
-  a = !git add -p . && git diff --staged
+  a = add -p
   ds = diff --staged
   chp = checkout -p
   cm = commit -m
@@ -25,3 +25,7 @@
   rpatch = reset --hard HEAD~1
 [branch]
 ; autosetuprebase = always
+[push]
+	default = matching
+[credential]
+	helper = osxkeychain

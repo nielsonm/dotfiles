@@ -145,13 +145,22 @@ alias sniff='phpcs --standard=Drupal --extensions=php,module,inc,install,test,pr
 #  fi
 #}
 
-export PERL_LOCAL_LIB_ROOT="/home/michael/perl5";
-export PERL_MB_OPT="--install_base /home/michael/perl5";
-export PERL_MM_OPT="INSTALL_BASE=/home/michael/perl5";
-export PERL5LIB="/home/michael/perl5/lib/perl5/x86_64-linux-gnu-thread-multi:/home/michael/perl5/lib/perl5";
-export GEM_PATH="/usr/lib/ruby1.9.1/gems/1.9.1/"
-export GEM_PATH="/var/lib/gems/1.9.1/gems"
-export PATH="/home/michael/perl5/bin:/var/lib/gems/1.9.1/bin:$PATH";
+# Import drush example goodies
+#if [ -f ~/.composer/vendor/drush/drush/examples/example.bashrc ]; then
+#  . ~/.composer/vendor/drush/drush/examples/example.bashrc
+#fi
+
+#export PERL_LOCAL_LIB_ROOT="/home/michael/perl5";
+#export PERL_MB_OPT="--install_base /home/michael/perl5";
+#export PERL_MM_OPT="INSTALL_BASE=/home/michael/perl5";
+#export PERL5LIB="/home/michael/perl5/lib/perl5/x86_64-linux-gnu-thread-multi:/home/michael/perl5/lib/perl5";
+#export GEM_PATH="/usr/lib/ruby1.9.1/gems/1.9.1/"
+#export GEM_PATH="/var/lib/gems/1.9.1/gems"
+#export PATH="/home/michael/perl5/bin:/var/lib/gems/1.9.1/bin:$PATH";
 export PATH=$HOME/.composer/vendor/bin:$PATH
+
 . ~/bash_prompt.sh
-. ~/funzies.sh
+#. ~/funzies.sh
+if [ -f ~/.git-completion.bash ]; then
+  . ~/.git-completion.bash
+fi
