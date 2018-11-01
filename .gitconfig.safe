@@ -1,8 +1,6 @@
 [user]
 	name = Michael Nielson
 	email = mnielson@phase2technology.com
-[github]
-  user = nielsonm
 [color]
   ui = true
 [url "git+ssh://nielsonm@git.drupal.org/project/"]
@@ -29,3 +27,6 @@
 	default = matching
 [credential]
 	helper = osxkeychain
+[credential "https://github.com"]
+        username = nielsonm
+	user = nielsonm
