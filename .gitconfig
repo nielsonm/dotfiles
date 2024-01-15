@@ -1,10 +1,18 @@
 [user]
-	name = Michael Nielson
-	email = mnielson@phase2technology.com
+	email = mnielson@tag1consulting.com
+	name = Mike Nielson
+[credential "https://github.com"]
+	helper = 
+	helper = !/usr/bin/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper = 
+	helper = !/usr/bin/gh auth git-credential
 [color]
   ui = true
 [url "git+ssh://nielsonm@git.drupal.org/project/"]
   insteadOf = dm:
+
+
 [alias]
   s = status
   a = add -p
@@ -19,7 +27,3 @@
   lgm = log  --all --graph --pretty=format:'%Cred%h%Creset - %C(yellow)%an%Creset - %s %Cgreen(%cr)%Creset' --abbrev-commit --date=relative --author michael@opensourcery.com
   patch = format-patch --stdout HEAD~1
   rpatch = reset --hard HEAD~1
-[branch]
-; autosetuprebase = always
-[push]
-	default = matching
