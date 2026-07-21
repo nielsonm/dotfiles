@@ -70,7 +70,7 @@ ZSH_THEME="robbyrussell"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git)
+plugins=(git aliases)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -102,3 +102,40 @@ source $ZSH/oh-my-zsh.sh
 
 eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 cd ~/work
+
+# History settings
+HISTFILE=~/.zsh_history
+HISTSIZE=10000
+SAVEHIST=10000
+setopt SHARE_HISTORY         # Share history across shell sessions
+setopt HIST_IGNORE_DUPS      # Do not record duplicate entries
+
+# Enable auto-completion
+autoload -U compinit && compinit
+
+# Default Prompt
+PROMPT='%F{cyan}%n@%m%f:%F{yellow}%~%f$ '
+
+# Useful Aliases
+alias ls='ls --color=auto' 2>/dev/null || alias ls='ls -G'
+alias ll='ls -la'
+alias gs='git s'
+alias vsc='code'
+
+# User local binaries & LANDO Path
+export PATH="$HOME/.local/bin:/home/mike/.lando/bin:$PATH";
+
+# Antigravity (AGY) Aliases & Helpers
+alias ag="agy"
+
+agask() {
+  agy --prompt "$*"
+}
+
+agadd() {
+  agy /add-dir "$(pwd)"
+}
+
+agreview() {
+  git diff | agy "Review these changes for potential bugs or code quality improvements"
+}
