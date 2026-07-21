@@ -15,8 +15,12 @@ from pathlib import Path
 DEFAULT_IGNORES = {
     ".git",
     ".gitignore",
+    ".github",
+    ".vscode",
     "README.md",
+    "Makefile",
     "install.sh",
+    "uninstall.sh",
     "check_diffs.py",
     "check_diffs.sh",
     "sync_active_config.py",

@@ -1,0 +1,9 @@
+# Dotfiles repo gitignore
+.config/Code/
+.config/JetBrains/
+.config/Rygel/
+.config/obsidian/
+sync_cron.log
+diff_report.txt
+*.swp
+*.swo
