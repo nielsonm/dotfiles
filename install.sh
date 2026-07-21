@@ -29,6 +29,7 @@ FILES_TO_LINK=(
   ".bash_profile"
   ".bashrc"
   ".git-completion.bash"
+  ".gitignore_global"
   ".vimrc"
   ".zshrc"
   ".tmux.conf"

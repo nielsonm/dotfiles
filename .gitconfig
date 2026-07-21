@@ -1,5 +1,5 @@
 [user]
-	email = mnielson@tag1consulting.com
+	email = m.e.nielson@gmail.com
 	name = Mike Nielson
 [credential "https://github.com"]
 	helper = 
@@ -27,3 +27,11 @@
   lgm = log  --all --graph --pretty=format:'%Cred%h%Creset - %C(yellow)%an%Creset - %s %Cgreen(%cr)%Creset' --abbrev-commit --date=relative --author michael@opensourcery.com
   patch = format-patch --stdout HEAD~1
   rpatch = reset --hard HEAD~1
+[core]
+	editor = vim
+[rerere]
+	enabled = true
+[init]
+	defaultBranch = main
+[credential]
+	helper = cache

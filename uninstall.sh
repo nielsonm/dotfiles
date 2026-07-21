@@ -13,6 +13,7 @@ FILES_TO_UNLINK=(
   ".bash_profile"
   ".bashrc"
   ".git-completion.bash"
+  ".gitignore_global"
   ".vimrc"
   ".zshrc"
   ".tmux.conf"
