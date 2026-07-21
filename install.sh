@@ -124,6 +124,28 @@ else
   (cd "${SYNTASTIC_DIR}" && git pull --quiet || true)
 fi
 
+# Oh My Zsh Plugins setup (zsh-autosuggestions & zsh-syntax-highlighting)
+ZSH_CUSTOM_DIR="${DEST_DIR}/.oh-my-zsh/custom/plugins"
+if [ -d "${DEST_DIR}/.oh-my-zsh" ]; then
+  echo ""
+  echo "--> Setting up Oh My Zsh plugins (zsh-autosuggestions, zsh-syntax-highlighting)..."
+  mkdir -p "${ZSH_CUSTOM_DIR}"
+
+  ZSH_AUTOSUGGEST_DIR="${ZSH_CUSTOM_DIR}/zsh-autosuggestions"
+  if [ ! -d "${ZSH_AUTOSUGGEST_DIR}" ]; then
+    git clone https://github.com/zsh-users/zsh-autosuggestions "${ZSH_AUTOSUGGEST_DIR}" || true
+  else
+    (cd "${ZSH_AUTOSUGGEST_DIR}" && git pull --quiet || true)
+  fi
+
+  ZSH_HIGHLIGHT_DIR="${ZSH_CUSTOM_DIR}/zsh-syntax-highlighting"
+  if [ ! -d "${ZSH_HIGHLIGHT_DIR}" ]; then
+    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "${ZSH_HIGHLIGHT_DIR}" || true
+  else
+    (cd "${ZSH_HIGHLIGHT_DIR}" && git pull --quiet || true)
+  fi
+fi
+
 # OS-Specific Package Manager & Setup Steps
 echo ""
 echo "--> Running OS-specific setup for ${PLATFORM}..."
