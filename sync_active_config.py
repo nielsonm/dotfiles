@@ -159,6 +159,23 @@ def main():
 
     print(f"Target Branch  : {branch_name}")
 
+    os.chdir(repo_dir)
+
+    # 1. Switch to target branch FIRST before modifying working directory
+    if not args.dry_run:
+        cur_branch_res = run_cmd(["git", "rev-parse", "--abbrev-ref", "HEAD"])
+        cur_branch = cur_branch_res.stdout.strip()
+
+        if cur_branch != branch_name:
+            branch_check = run_cmd(["git", "branch", "--list", branch_name])
+            if branch_check.stdout.strip():
+                print(f"Switching to existing local branch '{branch_name}'...")
+                run_cmd(["git", "checkout", branch_name])
+            else:
+                print(f"Creating and switching to new branch '{branch_name}'...")
+                run_cmd(["git", "checkout", "-b", branch_name])
+
+    # 2. Copy active configs from $HOME to repo
     checked, updated = sync_active_configs(source_dir, repo_dir, DEFAULT_IGNORES)
 
     print(f"Checked {len(checked)} config files.")
@@ -173,16 +190,7 @@ def main():
         print("[Dry Run] Skipping git branch, commit, and push operations.")
         return
 
-    os.chdir(repo_dir)
-
-    branch_check = run_cmd(["git", "branch", "--list", branch_name])
-    if branch_check.stdout.strip():
-        print(f"Switching to existing local branch '{branch_name}'...")
-        run_cmd(["git", "checkout", branch_name])
-    else:
-        print(f"Creating and switching to new branch '{branch_name}'...")
-        run_cmd(["git", "checkout", "-b", branch_name])
-
+    # 3. Stage and commit changes
     run_cmd(["git", "add", "-A"])
 
     status_res = run_cmd(["git", "status", "--porcelain"])
