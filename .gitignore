@@ -3,6 +3,8 @@
 .config/JetBrains/
 .config/Rygel/
 .config/obsidian/
+.vim/autoload/
+.vim/pack/
 sync_cron.log
 diff_report.txt
 *.swp
