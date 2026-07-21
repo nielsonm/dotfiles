@@ -3,10 +3,12 @@
 Script to pull active configuration changes from $HOME into this repo,
 create a new Git branch named after the machine hostname and current date,
 and automatically commit and push the changes.
+Includes a Secret Guard scanner to prevent accidental leaks of sensitive tokens.
 """
 
 import os
 import sys
+import re
 import shutil
 import subprocess
 import argparse
@@ -19,12 +21,24 @@ DEFAULT_IGNORES = {
     ".gitignore",
     "README.md",
     "install.sh",
+    "uninstall.sh",
     "check_diffs.py",
     "check_diffs.sh",
     "sync_active_config.py",
     "sync_active_config.sh",
     "diff_report.txt",
+    "Makefile",
 }
+
+# Regex patterns for detecting sensitive data
+SECRET_PATTERNS = [
+    (re.compile(r'-----BEGIN\s+(?:RSA|OPENSSH|EC|DSA|PRIVATE)\s+KEY-----'), "Private SSH/Crypto Key"),
+    (re.compile(r'\bAKIA[0-9A-Z]{16}\b'), "AWS Access Key ID"),
+    (re.compile(r'ghp_[a-zA-Z0-9]{36}'), "GitHub Personal Access Token"),
+    (re.compile(r'gho_[a-zA-Z0-9]{36}'), "GitHub OAuth Token"),
+    (re.compile(r'xox[baprs]-[0-9a-zA-Z]{10,48}'), "Slack Token"),
+    (re.compile(r'eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}'), "JWT Bearer Token"),
+]
 
 def run_cmd(cmd, cwd=None, check=True):
     res = subprocess.run(cmd, cwd=cwd, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -65,6 +79,18 @@ def scan_repo_files(repo_dir, ignores):
             repo_files.append(rel_path)
 
     return sorted(repo_files)
+
+def scan_file_for_secrets(file_path):
+    findings = []
+    try:
+        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+            for idx, line in enumerate(f, 1):
+                for pattern, desc in SECRET_PATTERNS:
+                    if pattern.search(line):
+                        findings.append((idx, desc, line.strip()[:60]))
+    except Exception:
+        pass
+    return findings
 
 def sync_active_configs(source_dir, repo_dir, ignores):
     source_path = Path(source_dir).resolve()
@@ -126,6 +152,7 @@ def main():
     parser.add_argument("--no-push", action="store_true", help="Commit changes locally without pushing to remote")
     parser.add_argument("--dry-run", action="store_true", help="Show files that would be updated without modifying repo or git state")
     parser.add_argument("--install-cron", action="store_true", help="Install a daily cron job to run this script automatically at 09:00 AM")
+    parser.add_argument("--skip-secret-check", action="store_true", help="Bypass secret guard scan")
 
     args = parser.parse_args()
 
@@ -186,11 +213,29 @@ def main():
     else:
         print("No differences found in active config files.")
 
+    # 3. Secret Guard Scanner
+    if not args.skip_secret_check and updated:
+        print("Running Secret Guard scan on updated files...")
+        secret_detected = False
+        for u in updated:
+            file_p = repo_dir / u
+            findings = scan_file_for_secrets(file_p)
+            if findings:
+                secret_detected = True
+                print(f"  [SECRET DETECTED] in {u}:")
+                for line_no, desc, snippet in findings:
+                    print(f"    Line {line_no} ({desc}): {snippet}")
+
+        if secret_detected:
+            print("\nError: Secret Guard detected potential sensitive keys/tokens! Sync aborted.", file=sys.stderr)
+            print("Use --skip-secret-check if you are certain these values are safe.", file=sys.stderr)
+            sys.exit(1)
+
     if args.dry_run:
         print("[Dry Run] Skipping git branch, commit, and push operations.")
         return
 
-    # 3. Stage and commit changes
+    # 4. Stage and commit changes
     run_cmd(["git", "add", "-A"])
 
     status_res = run_cmd(["git", "status", "--porcelain"])

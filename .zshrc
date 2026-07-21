@@ -113,9 +113,6 @@ setopt HIST_IGNORE_DUPS      # Do not record duplicate entries
 # Enable auto-completion
 autoload -U compinit && compinit
 
-# Default Prompt
-PROMPT='%F{cyan}%n@%m%f:%F{yellow}%~%f$ '
-
 # Useful Aliases
 alias ls='ls --color=auto' 2>/dev/null || alias ls='ls -G'
 alias ll='ls -la'
