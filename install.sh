@@ -40,14 +40,6 @@ mkdir -p ~/.vim/autoload ~/.vim/bundle && \
 curl -LSso ~/.vim/autoload/pathogen.vim https://tpo.pe/pathogen.vim
 
 
-mkdir -p ~/.vim/pack/tpope/start
-cd ~/.vim/pack/tpope/start
-git clone https://tpope.io/vim/fugitive.git
-vim -u NONE -c "helptags fugitive/doc" -c q
-
-cd ~/.vim/bundle && \
-git clone --depth=1 https://github.com/vim-syntastic/syntastic.git
-
 
 
 # Unwrap the gitconfig and copy it over.
