@@ -1,0 +1,13 @@
+.config/*/Cache/
+.config/*/CachedData/
+.config/*/CachedConfigurations/
+.config/*/Code Cache/
+.config/*/GPUCache/
+.config/*/logs/
+.config/*/Service Worker/
+.config/*/Sessions/
+.config/*/Storage/
+.config/*/Local Storage/
+.config/*/IndexedDB/
+sync_cron.log
+

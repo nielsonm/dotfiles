@@ -1,0 +1,33 @@
+#!/bin/bash
+
+path=$(printf '%s\n' "${PWD##*/}")
+
+if [ -n "${DDEV_ERROR_MESSAGE}" ]; then
+    echo $DDEV_ERROR_MESSAGE
+    exit 1
+fi
+
+if [ -n "${DDEV_PROJECT_DIR}" ]; then
+    cd $DDEV_PROJECT_DIR
+fi
+
+command="ddev exec"
+
+if [ -n "${DDEV_CONTAINER_PATH}" ]; then
+    command="${command} --dir $DDEV_CONTAINER_PATH"
+fi
+
+if [ -n "${DDEV_SUDO}" ]; then
+    command="${command} sudo"
+fi
+
+if [ -n "${DDEV_RAW_COMMAND}" ]; then
+    command="${command} --raw"
+fi
+
+command="${command} "$@""
+
+#echo $command
+
+$command
+exit 0

@@ -1,0 +1,5 @@
+.config/*/Cache/
+.config/*/CachedData/
+.config/*/Code Cache/
+.config/*/GPUCache/
+.config/*/Logs/
