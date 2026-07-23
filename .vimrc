@@ -70,11 +70,11 @@ if has('statusline')
 " Broken down into easily includeable segments
   set statusline=%<%f\    " Filename
   set statusline+=%w%h%m%r " Options
-  set statusline+=%{fugitive#statusline()} "  Git Hotness
+  set statusline+=%{exists('*fugitive#statusline')?fugitive#statusline():''} "  Git Hotness
   set statusline+=\ [%{&ff}/%Y]            " filetype
   set statusline+=\ [%{getcwd()}]          " current dir
   set statusline+=%#warningmsg#
-  set statusline+=%{SyntasticStatuslineFlag()}
+  set statusline+=%{exists('*SyntasticStatuslineFlag')?SyntasticStatuslineFlag():''}
   set statusline+=%*
   let g:syntastic_enable_signs=1
   set statusline+=%=%-14.(%l,%c%V%)\ %p%%  " Right aligned file nav info

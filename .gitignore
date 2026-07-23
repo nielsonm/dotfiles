@@ -9,5 +9,22 @@
 .config/*/Storage/
 .config/*/Local Storage/
 .config/*/IndexedDB/
+.config/Code
+.config/obsidian
+.config/.gsd-keyboard.settings-ported
+.config/GNOME-xdg-terminals.list
+.config/evolution/
+.config/gnome-initial-setup-done
+.config/gtk-3.0/
+.config/ibus/
+.config/dconf/user
+.config/obsidian/TransportSecurity
+.config/tiling-assistant/tiledSessionRestore.json
+.config/ubuntu-xdg-terminals.list
+.config/user-dirs.dirs
+.config/user-dirs.locale
+.config/xdg-terminals.list
+.vim/
+.config/sync_cron.log
 sync_cron.log
 
