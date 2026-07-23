@@ -16,6 +16,7 @@ from pathlib import Path
 
 DEFAULT_IGNORES = {
     ".git",
+    ".github",
     ".gitignore",
     "README.md",
     "install.sh",
@@ -24,6 +25,10 @@ DEFAULT_IGNORES = {
     "sync_active_config.py",
     "sync_active_config.sh",
     "diff_report.txt",
+    "sync_cron.log",
+    "pytest.ini",
+    "tests",
+    "__pycache__",
 }
 
 def run_cmd(cmd, cwd=None, check=True):

@@ -1,0 +1,53 @@
+name: CI / Test Suite
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  lint:
+    name: Lint & Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run ShellCheck on Shell Scripts
+        uses: ludeeus/action-shellcheck@master
+        with:
+          ignore_paths: '.oh-my-zsh'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Syntax Check Python Scripts
+        run: |
+          python -m py_compile check_diffs.py sync_active_config.py tests/*.py
+
+  test:
+    name: Unit & Integration Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Run Python Unit Tests
+        run: |
+          python -m unittest discover -s tests
+
+      - name: Test check_diffs.py CLI execution
+        run: |
+          mkdir -p /tmp/fake_home
+          python check_diffs.py --target /tmp/fake_home --summary-only

@@ -14,11 +14,19 @@ from pathlib import Path
 # Files/directories in repo to ignore by default
 DEFAULT_IGNORES = {
     ".git",
+    ".github",
     ".gitignore",
     "README.md",
     "install.sh",
     "check_diffs.py",
     "check_diffs.sh",
+    "sync_active_config.py",
+    "sync_active_config.sh",
+    "diff_report.txt",
+    "sync_cron.log",
+    "pytest.ini",
+    "tests",
+    "__pycache__",
 }
 
 class Colors:
