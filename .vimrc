@@ -6,7 +6,7 @@ set shiftwidth=2
 set showcmd
 set smartindent
 set tabstop=2
-colorscheme desert
+colorscheme elflord
 syntax on
 
 "setlocal spell spelllang=en_us
