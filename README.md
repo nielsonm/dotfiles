@@ -1,12 +1,26 @@
 # Dotfiles Repository
 
-A lightweight, cross-platform dotfiles management repository with automatic active configuration auditing, secret leakage prevention, daily machine-and-date branch syncs, and OS-specific setup.
+A lightweight, cross-platform dotfiles management repository with automatic active configuration auditing, secret leakage prevention, SSH key scanning, daily machine-and-date branch syncs, and OS-specific setup.
 
 ---
 
 ## Key Features & Tools
 
-### 1. Installation & Restoration (`install.sh` / `uninstall.sh`)
+### 1. Secret & SSH Key Guard (`check_secrets.sh`)
+Scans dotfiles and active configuration files for SSH private keys, API access tokens (AWS, GitHub, Slack, OpenAI, Stripe), and un-encrypted secrets to prevent accidental leakage into git.
+
+```bash
+# Scan repository for secrets and SSH keys
+./check_secrets.sh
+
+# Output scan results in JSON format
+./check_secrets.sh --json
+
+# Run scanner with non-zero exit code if secrets are found
+./check_secrets.sh --exit-code
+```
+
+### 2. Installation & Restoration (`install.sh` / `uninstall.sh`)
 - **`install.sh`**: Cross-platform installer for macOS (OSX) and Linux. Creates non-destructive symlinks, backs up existing files (`.bak`), and bootstraps Vim plugins.
 - **`uninstall.sh`**: Safely removes symlinks created by `install.sh` and restores original `.bak` configuration files.
 
@@ -18,7 +32,7 @@ A lightweight, cross-platform dotfiles management repository with automatic acti
 ./uninstall.sh
 ```
 
-### 2. Active Config Diff Checker (`check_diffs.sh`)
+### 3. Active Config Diff Checker (`check_diffs.sh`)
 Audits active configuration files in your home directory (`~`) against the repository and prints color-coded unified diffs.
 
 ```bash
@@ -35,7 +49,7 @@ Audits active configuration files in your home directory (`~`) against the repos
 ./check_diffs.sh -o diff_report.txt
 ```
 
-### 3. Automated Daily Sync & Secret Guard (`sync_active_config.sh`)
+### 4. Automated Daily Sync & Secret Guard (`sync_active_config.sh`)
 Pulls active config changes into a new branch named `<machine-name>-<YYYY-MM-DD>`, scans for sensitive tokens/keys, commits them, and pushes automatically to your remote Git repository.
 
 ```bash
@@ -64,12 +78,14 @@ Use these files to store work-specific environment variables, private paths, or 
 
 ---
 
-## Makefile Shortcuts
+## Makefile Shortcuts & Testing
 
 ```bash
-make install    # Run installer with symlinks
-make uninstall  # Remove symlinks & restore backups
-make diff       # View diff report between active config and repo
-make sync       # Run machine+date branch sync (with secret scan) & push
-make cron       # Install daily automated cron job
+make install        # Run installer with symlinks
+make uninstall      # Remove symlinks & restore backups
+make diff           # View diff report between active config and repo
+make sync           # Run machine+date branch sync (with secret scan) & push
+make cron           # Install daily automated cron job
+make check-secrets  # Run Secret & SSH Key Guard scanner
+make test           # Run full unit test suite
 ```

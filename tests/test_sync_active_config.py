@@ -41,15 +41,42 @@ class TestSyncActiveConfig(unittest.TestCase):
             (repo / ".vimrc").write_text("set number\n")
             
             ignores = {".git"}
-            checked, updated = sync_active_configs(source, repo, ignores)
+            checked, updated, blocked = sync_active_configs(source, repo, ignores, skip_secrets=False)
             
             self.assertIn(".bashrc", checked)
             self.assertIn(".vimrc", checked)
             self.assertIn(".bashrc", updated)
             self.assertNotIn(".vimrc", updated)
+            self.assertEqual(len(blocked), 0)
             
             # Verify file was updated in repo
             self.assertEqual((repo / ".bashrc").read_text(), "export MODIFIED=1\n")
+
+    def test_sync_active_configs_blocks_secrets(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            source = tmp_path / "source"
+            repo = tmp_path / "repo"
+            
+            source.mkdir()
+            repo.mkdir()
+            
+            # Create file with secret in source
+            (source / ".bashrc").write_text("export AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE\n")
+            (repo / ".bashrc").write_text("export AWS_ACCESS_KEY_ID=old\n")
+            
+            (source / ".vimrc").write_text("set number\n")
+            (repo / ".vimrc").write_text("set number\n")
+            
+            ignores = {".git"}
+            checked, updated, blocked = sync_active_configs(source, repo, ignores, skip_secrets=True)
+            
+            self.assertIn(".bashrc", checked)
+            self.assertIn(".bashrc", blocked)
+            self.assertNotIn(".bashrc", updated)
+            
+            # Verify file in repo was NOT updated with secret
+            self.assertEqual((repo / ".bashrc").read_text(), "export AWS_ACCESS_KEY_ID=old\n")
 
 if __name__ == "__main__":
     unittest.main()

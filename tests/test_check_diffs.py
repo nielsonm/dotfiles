@@ -2,7 +2,7 @@ import os
 import unittest
 import tempfile
 from pathlib import Path
-from check_diffs import scan_repo_files, compare_file, generate_report
+from check_diffs import scan_repo_files, compare_file, generate_report, format_diff_line
 
 class TestCheckDiffs(unittest.TestCase):
     def test_scan_repo_files(self):
@@ -72,6 +72,22 @@ class TestCheckDiffs(unittest.TestCase):
             self.assertIn("[MATCH]", report)
             self.assertIn("[DIFFERENT]", report)
             self.assertIn("[MISSING IN TARGET]", report)
+
+    def test_generate_report_summary_only(self):
+        results = [
+            {"status": "DIFFERENT", "rel_path": ".vimrc", "repo_file": "c", "target_file": "d", "diff": ["-old", "+new"], "diff_count": 2}
+        ]
+        report = generate_report(results, "/repo", "/target", summary_only=True, use_color=False)
+        self.assertIn("FILE STATUSES:", report)
+        self.assertNotIn("DETAILED UNIFIED DIFFS:", report)
+
+    def test_format_diff_line(self):
+        line = "+added line"
+        formatted = format_diff_line(line, use_color=False)
+        self.assertEqual(formatted, "+added line")
+        
+        colored = format_diff_line(line, use_color=True)
+        self.assertIn("\033[92m", colored)
 
 if __name__ == "__main__":
     unittest.main()

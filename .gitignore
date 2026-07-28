@@ -35,6 +35,10 @@ diff_report.txt
 .config/user-dirs.dirs
 .config/user-dirs.locale
 .config/xdg-terminals.list
+.config/libreoffice/
+.config/goa-1.0/
+.config/totem/
+.config/gnome-session/
 .vim/
 __pycache__/
 .config/sync_cron.log

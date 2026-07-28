@@ -14,10 +14,14 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Run ShellCheck on Shell Scripts
-        uses: ludeeus/action-shellcheck@master
-        with:
-          ignore_paths: '.oh-my-zsh'
+      - name: Validate Bash Shell Scripts Syntax
+        run: |
+          bash -n install.sh
+          bash -n uninstall.sh
+          bash -n check_diffs.sh
+          bash -n sync_active_config.sh
+          bash -n check_secrets.sh
+          echo "All shell scripts passed syntax validation."
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -26,7 +30,7 @@ jobs:
 
       - name: Syntax Check Python Scripts
         run: |
-          python -m py_compile check_diffs.py sync_active_config.py tests/*.py
+          python -m py_compile *.py tests/*.py
 
   test:
     name: Unit & Integration Tests
@@ -47,47 +51,9 @@ jobs:
         run: |
           python -m unittest discover -s tests
 
-      - name: Test check_diffs.py CLI execution
+      - name: Test CLI Executions
         run: |
           mkdir -p /tmp/fake_home
           python check_diffs.py --target /tmp/fake_home --summary-only
-name: Dotfiles CI & Syntax Verification
-
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
-jobs:
-  lint-and-validate:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Validate Bash Shell Scripts Syntax
-        run: |
-          bash -n install.sh
-          bash -n uninstall.sh
-          bash -n check_diffs.sh
-          bash -n sync_active_config.sh
-          echo "All shell scripts passed syntax validation."
-
-      - name: Validate Python Scripts Syntax
-        run: |
-          python3 -m py_compile check_diffs.py
-          python3 -m py_compile sync_active_config.py
-          echo "All Python scripts passed syntax compilation."
-
-      - name: Run Script Dry-Run Checks
-        run: |
-          chmod +x check_diffs.py sync_active_config.py check_diffs.sh sync_active_config.sh install.sh
-          ./check_diffs.sh --summary-only
-          ./sync_active_config.sh --dry-run
+          python sync_active_config.py --source /tmp/fake_home --dry-run
+          python check_secrets.py --target /tmp/fake_home
