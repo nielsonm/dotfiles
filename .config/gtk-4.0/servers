@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xbel version="1.0"
+      xmlns:bookmark="http://www.freedesktop.org/standards/desktop-bookmarks"
+      xmlns:mime="http://www.freedesktop.org/standards/shared-mime-info"
+>
+  <bookmark href="smb:///192.168.86.210" added="2026-07-24T06:19:43.845621Z" modified="2026-07-24T06:19:43.845626Z" visited="2026-07-24T06:19:43.845623Z">
+    <info>
+      <metadata owner="http://freedesktop.org">
+        <bookmark:applications>
+          <bookmark:application name="org.gnome.Nautilus" exec="&apos;org.gnome.Nautilus %u&apos;" modified="2026-07-24T06:19:43.845624Z" count="1"/>
+        </bookmark:applications>
+      </metadata>
+    </info>
+  </bookmark>
+  <bookmark href="smb://192.168.86.210/" added="2026-07-24T06:21:24.619419Z" modified="2026-07-24T06:21:24.619423Z" visited="2026-07-24T06:21:24.619420Z">
+    <title>Windows shares on 192.168.86.210</title>
+    <info>
+      <metadata owner="http://freedesktop.org">
+        <bookmark:applications>
+          <bookmark:application name="org.gnome.Nautilus" exec="&apos;org.gnome.Nautilus %u&apos;" modified="2026-07-24T06:21:24.619422Z" count="1"/>
+        </bookmark:applications>
+      </metadata>
+    </info>
+  </bookmark>
+</xbel>

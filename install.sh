@@ -180,3 +180,19 @@ echo ""
 echo "========================================="
 echo " Installation Complete for ${PLATFORM}!"
 echo "========================================="
+# TODO Copy over the directories.
+
+
+# Infect vim with pathogen.
+mkdir -p ~/.vim/autoload ~/.vim/bundle && \
+curl -LSso ~/.vim/autoload/pathogen.vim https://tpo.pe/pathogen.vim
+
+
+
+
+# Unwrap the gitconfig and copy it over.
+
+cp -piv ${SrcDir}/.gitconfig.safe .gitconfig
+
+# Install homebrew
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"

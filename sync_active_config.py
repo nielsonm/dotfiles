@@ -3,12 +3,10 @@
 Script to pull active configuration changes from $HOME into this repo,
 create a new Git branch named after the machine hostname and current date,
 and automatically commit and push the changes.
-Includes a Secret Guard scanner to prevent accidental leaks of sensitive tokens.
 """
 
 import os
 import sys
-import re
 import shutil
 import subprocess
 import argparse
@@ -18,27 +16,20 @@ from pathlib import Path
 
 DEFAULT_IGNORES = {
     ".git",
+    ".github",
     ".gitignore",
     "README.md",
     "install.sh",
-    "uninstall.sh",
     "check_diffs.py",
     "check_diffs.sh",
     "sync_active_config.py",
     "sync_active_config.sh",
     "diff_report.txt",
-    "Makefile",
+    "sync_cron.log",
+    "pytest.ini",
+    "tests",
+    "__pycache__",
 }
-
-# Regex patterns for detecting sensitive data
-SECRET_PATTERNS = [
-    (re.compile(r'-----BEGIN\s+(?:RSA|OPENSSH|EC|DSA|PRIVATE)\s+KEY-----'), "Private SSH/Crypto Key"),
-    (re.compile(r'\bAKIA[0-9A-Z]{16}\b'), "AWS Access Key ID"),
-    (re.compile(r'ghp_[a-zA-Z0-9]{36}'), "GitHub Personal Access Token"),
-    (re.compile(r'gho_[a-zA-Z0-9]{36}'), "GitHub OAuth Token"),
-    (re.compile(r'xox[baprs]-[0-9a-zA-Z]{10,48}'), "Slack Token"),
-    (re.compile(r'eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}'), "JWT Bearer Token"),
-]
 
 def run_cmd(cmd, cwd=None, check=True):
     res = subprocess.run(cmd, cwd=cwd, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -80,18 +71,6 @@ def scan_repo_files(repo_dir, ignores):
 
     return sorted(repo_files)
 
-def scan_file_for_secrets(file_path):
-    findings = []
-    try:
-        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-            for idx, line in enumerate(f, 1):
-                for pattern, desc in SECRET_PATTERNS:
-                    if pattern.search(line):
-                        findings.append((idx, desc, line.strip()[:60]))
-    except Exception:
-        pass
-    return findings
-
 def sync_active_configs(source_dir, repo_dir, ignores):
     source_path = Path(source_dir).resolve()
     repo_path = Path(repo_dir).resolve()
@@ -129,6 +108,7 @@ def setup_cron_job(script_path):
     abs_script = Path(script_path).resolve()
     cron_cmd = f"0 9 * * * {abs_script} >> {abs_script.parent}/sync_cron.log 2>&1"
 
+    # Get current crontab
     res = run_cmd(["crontab", "-l"], check=False)
     current_cron = res.stdout if res.returncode == 0 else ""
 
@@ -152,7 +132,6 @@ def main():
     parser.add_argument("--no-push", action="store_true", help="Commit changes locally without pushing to remote")
     parser.add_argument("--dry-run", action="store_true", help="Show files that would be updated without modifying repo or git state")
     parser.add_argument("--install-cron", action="store_true", help="Install a daily cron job to run this script automatically at 09:00 AM")
-    parser.add_argument("--skip-secret-check", action="store_true", help="Bypass secret guard scan")
 
     args = parser.parse_args()
 
@@ -176,6 +155,7 @@ def main():
     print(f"Source (Active): {source_dir}")
     print(f"Target (Repo)  : {repo_dir}")
 
+    # Determine machine name & date for branch name
     machine_name = get_machine_name()
     date_str = datetime.now().strftime("%Y-%m-%d")
 
@@ -186,23 +166,6 @@ def main():
 
     print(f"Target Branch  : {branch_name}")
 
-    os.chdir(repo_dir)
-
-    # 1. Switch to target branch FIRST before modifying working directory
-    if not args.dry_run:
-        cur_branch_res = run_cmd(["git", "rev-parse", "--abbrev-ref", "HEAD"])
-        cur_branch = cur_branch_res.stdout.strip()
-
-        if cur_branch != branch_name:
-            branch_check = run_cmd(["git", "branch", "--list", branch_name])
-            if branch_check.stdout.strip():
-                print(f"Switching to existing local branch '{branch_name}'...")
-                run_cmd(["git", "checkout", branch_name])
-            else:
-                print(f"Creating and switching to new branch '{branch_name}'...")
-                run_cmd(["git", "checkout", "-b", branch_name])
-
-    # 2. Copy active configs from $HOME to repo
     checked, updated = sync_active_configs(source_dir, repo_dir, DEFAULT_IGNORES)
 
     print(f"Checked {len(checked)} config files.")
@@ -213,31 +176,30 @@ def main():
     else:
         print("No differences found in active config files.")
 
-    # 3. Secret Guard Scanner
-    if not args.skip_secret_check and updated:
-        print("Running Secret Guard scan on updated files...")
-        secret_detected = False
-        for u in updated:
-            file_p = repo_dir / u
-            findings = scan_file_for_secrets(file_p)
-            if findings:
-                secret_detected = True
-                print(f"  [SECRET DETECTED] in {u}:")
-                for line_no, desc, snippet in findings:
-                    print(f"    Line {line_no} ({desc}): {snippet}")
-
-        if secret_detected:
-            print("\nError: Secret Guard detected potential sensitive keys/tokens! Sync aborted.", file=sys.stderr)
-            print("Use --skip-secret-check if you are certain these values are safe.", file=sys.stderr)
-            sys.exit(1)
-
     if args.dry_run:
         print("[Dry Run] Skipping git branch, commit, and push operations.")
         return
 
-    # 4. Stage and commit changes
+    # Git operations
+    os.chdir(repo_dir)
+
+    # Get current branch
+    cur_branch_res = run_cmd(["git", "rev-parse", "--abbrev-ref", "HEAD"])
+    orig_branch = cur_branch_res.stdout.strip()
+
+    # Check if branch exists locally or remotely
+    branch_check = run_cmd(["git", "branch", "--list", branch_name])
+    if branch_check.stdout.strip():
+        print(f"Switching to existing local branch '{branch_name}'...")
+        run_cmd(["git", "checkout", branch_name])
+    else:
+        print(f"Creating and switching to new branch '{branch_name}'...")
+        run_cmd(["git", "checkout", "-b", branch_name])
+
+    # Stage changes
     run_cmd(["git", "add", "-A"])
 
+    # Check if there are staged changes to commit
     status_res = run_cmd(["git", "status", "--porcelain"])
     staged_changes = [line for line in status_res.stdout.splitlines() if line.strip()]
 

@@ -1,0 +1,442 @@
+================================================================
+               Dotfiles Active Config Diff Report               
+================================================================
+Repo Location:   /home/mike/work/dotfiles
+Target Location: /home/mike
+----------------------------------------------------------------
+SUMMARY:
+  Total tracked configs checked : 53
+  Identical / Matched              : 2
+  Modified / Different             : 3
+  Missing in Active Config         : 48
+----------------------------------------------------------------
+FILE STATUSES:
+  [MISSING IN TARGET]      .bash_profile
+  [DIFFERENT]              .bashrc (163 diff lines)
+  [MISSING IN TARGET]      .config/google-chrome/Default/User StyleSheets/Custom.css
+  [MISSING IN TARGET]      .drush/aliases.drushrc.php
+  [DIFFERENT]              .drush/drushrc.php (182 diff lines)
+  [MISSING IN TARGET]      .drush.aliases.drushrc.php
+  [MISSING IN TARGET]      .git-completion.bash
+  [DIFFERENT]              .gitconfig (21 diff lines)
+  [MISSING IN TARGET]      .gitconfig.safe
+  [MATCH]                  .shell.pre-oh-my-zsh
+  [MISSING IN TARGET]      .tmux.conf
+  [MISSING IN TARGET]      .vim/bundle/vim-fugitive/.gitattributes
+  [MISSING IN TARGET]      .vim/bundle/vim-fugitive/.gitignore
+  [MISSING IN TARGET]      .vim/bundle/vim-fugitive/CONTRIBUTING.markdown
+  [MISSING IN TARGET]      .vim/bundle/vim-fugitive/README.markdown
+  [MISSING IN TARGET]      .vim/bundle/vim-fugitive/doc/fugitive.txt
+  [MISSING IN TARGET]      .vim/bundle/vim-fugitive/plugin/fugitive.vim
+  [MISSING IN TARGET]      .vim/bundle/vim-plugin-for-drupal/autoload/drupal.vim
+  [MISSING IN TARGET]      .vim/bundle/vim-plugin-for-drupal/autoload/drupaldetect.vim
+  [MISSING IN TARGET]      .vim/bundle/vim-plugin-for-drupal/compiler/coder.vim
+  [MISSING IN TARGET]      .vim/bundle/vim-plugin-for-drupal/doc/drupal.txt
+  [MISSING IN TARGET]      .vim/bundle/vim-plugin-for-drupal/filetype.vim
+  [MISSING IN TARGET]      .vim/bundle/vim-plugin-for-drupal/ftplugin/drini.vim
+  [MISSING IN TARGET]      .vim/bundle/vim-plugin-for-drupal/ftplugin/drupal.vim
+  [MISSING IN TARGET]      .vim/bundle/vim-plugin-for-drupal/plugin/drupal.vim
+  [MISSING IN TARGET]      .vim/bundle/vim-plugin-for-drupal/snipmate/drupal/php.snippets
+  [MISSING IN TARGET]      .vim/bundle/vim-plugin-for-drupal/snipmate/drupal6/php.snippets
+  [MISSING IN TARGET]      .vim/bundle/vim-plugin-for-drupal/snipmate/drupal7/php.snippets
+  [MISSING IN TARGET]      .vim/bundle/vim-plugin-for-drupal/syntax/drini.vim
+  [MISSING IN TARGET]      .vim/bundle/vim-plugin-for-drupal/syntax/drupal.vim
+  [MISSING IN TARGET]      .vim/bundle/vim-plugin-for-drupal/tagfiles/drupal6.tags
+  [MISSING IN TARGET]      .vim/bundle/vim-plugin-for-drupal/tagfiles/drupal7.tags
+  [MISSING IN TARGET]      .vim/bundle/vim-plugin-for-drupal/tagfiles/drupal8.tags
+  [MISSING IN TARGET]      .vim/cucumber.vim
+  [MISSING IN TARGET]      .vim/plugin/gnupg.vim
+  [MISSING IN TARGET]      .vim/plugin/mkd.vim
+  [MISSING IN TARGET]      .vim/plugin/syntastic.vim
+  [MISSING IN TARGET]      .vim/spell/en.utf-8.add
+  [MISSING IN TARGET]      .vim/spell/en.utf-8.add.spl
+  [MISSING IN TARGET]      .vim/syntax/apache.vim
+  [MISSING IN TARGET]      .vim/syntax/apachestyle.vim
+  [MISSING IN TARGET]      .vim/syntax/drupal-info.vim
+  [MISSING IN TARGET]      .vim/syntax/ini.vim
+  [MISSING IN TARGET]      .vim/syntax/ini.vim.txt
+  [MISSING IN TARGET]      .vim/syntax/php.vim
+  [MISSING IN TARGET]      .vim/syntax/vim-ini-syntax-03/.hgtags
+  [MISSING IN TARGET]      .vim/syntax/vim-ini-syntax-03/LICENSE.txt
+  [MISSING IN TARGET]      .vim/syntax/vim-ini-syntax-03/README.txt
+  [MISSING IN TARGET]      .vimrc
+  [MATCH]                  .zshrc
+  [MISSING IN TARGET]      bash_prompt.sh
+  [MISSING IN TARGET]      funzies.sh
+  [MISSING IN TARGET]      print_colors.sh
+----------------------------------------------------------------
+
+DETAILED UNIFIED DIFFS:
+================================================================
+
+--- Diff for: .bashrc ---
+--- active (~/.bashrc)
++++ repo (.bashrc)
+@@ -3,41 +3,34 @@
+ # for examples
+ 
+ # If not running interactively, don't do anything
+-case $- in
+-    *i*) ;;
+-      *) return;;
+-esac
++[ -z "$PS1" ] && return
+ 
+-# don't put duplicate lines or lines starting with space in the history.
+-# See bash(1) for more options
+-HISTCONTROL=ignoreboth
++# don't put duplicate lines in the history. See bash(1) for more options
++# ... or force ignoredups and ignorespace
++HISTCONTROL=ignoredups:ignorespace
+ 
+ # append to the history file, don't overwrite it
+ shopt -s histappend
+ 
+ # for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
+-HISTSIZE=1000
+-HISTFILESIZE=2000
++HISTSIZE=1000000
++HISTFILESIZE=2000000
+ 
+ # check the window size after each command and, if necessary,
+ # update the values of LINES and COLUMNS.
+ shopt -s checkwinsize
+ 
+-# If set, the pattern "**" used in a pathname expansion context will
+-# match all files and zero or more directories and subdirectories.
+-#shopt -s globstar
+-
+ # make less more friendly for non-text input files, see lesspipe(1)
+ [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
+ 
+ # set variable identifying the chroot you work in (used in the prompt below)
+-if [ -z "${debian_chroot:-}" ] && [ -r /etc/debian_chroot ]; then
++if [ -z "$debian_chroot" ] && [ -r /etc/debian_chroot ]; then
+     debian_chroot=$(cat /etc/debian_chroot)
+ fi
+ 
+ # set a fancy prompt (non-color, unless we know we "want" color)
+ case "$TERM" in
+-    xterm-color|*-256color) color_prompt=yes;;
++    xterm-color) color_prompt=yes;;
+ esac
+ 
+ # uncomment for a colored prompt, if the terminal has the capability; turned
+@@ -63,6 +56,19 @@
+ fi
+ unset color_prompt force_color_prompt
+ 
++# Git goodness:
++# http://www.metaltoad.com/blog/git-drupal-primer
++# GIT_PS1_SHOWDIRTYSTATE=true
++# export PS1='[\u@mb \w$(__git_ps1)]\$ '
++GIT_PS1_SHOWDIRTYSTATE=true
++if [ "$color_prompt" = yes ]; then
++PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]$(__git_ps1)\$ '
++else
++PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w$(__git_ps1)\$ '
++fi
++unset color_prompt force_color_prompt
++
++
+ # If this is an xterm set the title to user@host:dir
+ case "$TERM" in
+ xterm*|rxvt*)
+@@ -84,20 +90,15 @@
+     alias egrep='egrep --color=auto'
+ fi
+ 
+-# colored GCC warnings and errors
+-#export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
+-
+ # some more ls aliases
+-alias ll='ls -alF'
++alias lt='ls -lArt'
++alias ll='ls -AlF'
+ alias la='ls -A'
+ alias l='ls -CF'
+-
++alias ge=gedit
++alias diceware=~/bin/diceware.sh
+ alias gs='git status'
+ alias cl='clear'
+-
+-# Add an "alert" alias for long running commands.  Use like so:
+-#   sleep 10; alert
+-alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
+ 
+ # Alias definitions.
+ # You may want to put all your additions into a separate file like
+@@ -111,16 +112,55 @@
+ # enable programmable completion features (you don't need to enable
+ # this, if it's already enabled in /etc/bash.bashrc and /etc/profile
+ # sources /etc/bash.bashrc).
+-if ! shopt -oq posix; then
+-  if [ -f /usr/share/bash-completion/bash_completion ]; then
+-    . /usr/share/bash-completion/bash_completion
+-  elif [ -f /etc/bash_completion ]; then
++if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
+     . /etc/bash_completion
+-  fi
+ fi
+-cd ~/work
+-. "$HOME/.cargo/env"
+-. "/home/mike/.deno/env"
+ 
+-# Added by Antigravity CLI installer
+-export PATH="/home/mike/.local/bin:$PATH"
++# Aliases
++alias tun='pkill -f gargravarr-tunnels; ssh -fN -L 6667:localhost:6667 gargravarr -i /home/mike/.ssh/2011_michael_id_rsa -o ControlMaster=no gargravarr-tunnels'
++alias o='gnome-open'
++alias cvs_stat='cvs stat | grep File | grep -v Up-to-date'
++
++# For drush make, export http_proxy for use with squid.
++#export http_proxy=http://localhost:3128
++export ftp_proxy=http://localhost:3128
++
++# Set vim to default terminal editor
++export EDITOR=vim
++
++# CodeSniffer alias for Drupal_cs.
++alias sniff='phpcs --standard=Drupal --extensions=php,module,inc,install,test,profile,theme,css'
++
++# Output MOTD
++#cat /etc/motd
++
++# Showoff command autocomplete  https://github.com/ramnathv/slidifyLibraries/tree/master/inst/libraries/frameworks/showoff#bash-completion
++#complete -F get_showoff_commands
++#function get_showoff_commands()
++#{
++#  if [ -z $2 ] ; then
++#    COMPREPLY=(`showoff help -c`)
++#  else
++#    COMPREPLY=(`showoff help -c $2`)
++#  fi
++#}
++
++# Import drush example goodies
++#if [ -f ~/.composer/vendor/drush/drush/examples/example.bashrc ]; then
++#  . ~/.composer/vendor/drush/drush/examples/example.bashrc
++#fi
++
++#export PERL_LOCAL_LIB_ROOT="/home/michael/perl5";
++#export PERL_MB_OPT="--install_base /home/michael/perl5";
++#export PERL_MM_OPT="INSTALL_BASE=/home/michael/perl5";
++#export PERL5LIB="/home/michael/perl5/lib/perl5/x86_64-linux-gnu-thread-multi:/home/michael/perl5/lib/perl5";
++#export GEM_PATH="/usr/lib/ruby1.9.1/gems/1.9.1/"
++#export GEM_PATH="/var/lib/gems/1.9.1/gems"
++#export PATH="/home/michael/perl5/bin:/var/lib/gems/1.9.1/bin:$PATH";
++export PATH=$HOME/.composer/vendor/bin:$PATH
++
++. ~/bash_prompt.sh
++#. ~/funzies.sh
++if [ -f ~/.git-completion.bash ]; then
++  . ~/.git-completion.bash
++fi
+
+--- Diff for: .drush/drushrc.php ---
+--- active (~/.drush/drushrc.php)
++++ repo (.drush/drushrc.php)
+@@ -1,3 +1,178 @@
+ <?php
++// $Id: example.drushrc.php,v 1.8 2010/06/05 15:18:16 weitzman Exp $
+ 
+-$options["include"][] = drush_server_home() . "/.drush/pantheon/drush8";
++/*
++* Examples of valid statements for a drushrc.php file. Use this file to cut down on
++* typing of options and avoid mistakes.
++*
++* Rename this file to drushrc.php and optionally copy it to one of
++* five convenient places, listed below in order of precedence:
++*
++* 1. Drupal site folder (e.g sites/{default|example.com}/drushrc.php).
++* 2. Drupal installation root.
++* 3. In any location, as specified by the --config (-c) option.
++* 4. User's .drush folder (i.e. ~/.drush/drushrc.php).
++* 5. System wide configuration folder (e.g. /etc/drush/drushrc.php).
++* 6. Drush installation folder.
++*
++* If a configuration file is found in any of the above locations, it
++* will be loaded and merged with other configuration files in the
++* search list.
++*
++* IMPORTANT NOTE on configuration file loading:
++*
++* At its core, drush works by "bootstrapping" the Drupal environment
++* in very much the same way that is done during a normal page request
++* from the web server, so most drush commands run in the context
++* of a fully-initialized website.
++*
++* Configuration files are loaded in the reverse order they are
++* shown above. Configuration files #6 through #3 are loaded immediately;
++* the configuration file stored in the Drupal root is loaded
++* when Drupal is initialized, and the configuration file stored
++* in the site folder is loaded when the site is initialized.
++*
++* This load order means that in a multi-site environment, the
++* configuration file stored in the site folder will only be
++* available for commands that operate on that one particular
++* site. Additionally, there are some drush commands such as
++* pm-download do not bootstrap a drupal environment at all,
++* and therefore only have access to configuration files #6 - #3.
++* The drush commands 'rsync' and 'sql-sync' are special cases.
++* These commands will load the configuration file for the site
++* specified by the source parameter; however, they do not
++* load the configuration file for the site specified by the
++* destination parameter, nor do they load configuration files
++* for remote sites.
++*/
++
++// DEPRECATED: Allow command names to contain spaces.
++// This feature will be removed shortly; drush-3 will
++// require commands to be named with dashes instead of
++// spaces (e.g. "cache-clear" instead of "cache clear").
++// During the transition period, uncomment the line below
++// to allow commands with spaces to be used.
++# $options['allow-spaces-in-commands'] = 1;
++
++// Specify a particular multisite.
++# $options['l'] = 'http://example.com/subir';
++
++// Specify your Drupal core base directory (useful if you use symlinks).
++# $options['r'] = '/home/USER/workspace/drupal-6';
++
++// Load a drushrc.php configuration file from the current working directory.
++# $options['c'] = '.';
++
++// Specify CVS for checkouts
++# $options['package-handler'] = 'cvs';
++
++// Specify CVS credentials for checkouts (requires --package-handler=cvs)
++# $options['cvscredentials'] = 'name:password';
++
++// Specify additional directories to search for *.drush.inc files
++// Use POSIX path separator (':')
++# $options['i'] = 'sites/default:profiles/myprofile';
++
++// Specify additional directories to search for *.alias.drushrc.php
++// and *.aliases.drushrc.php files
++# $options['alias-path'] = '/path/to/aliases:/path2/to/more/aliases';
++
++// Specify directory where sql-sync will store persistent dump files.
++// Keeping the dump files around will improve the performance of rsync
++// when the database is rsync'ed to a remote system. If a dump directory
++// is not specified, then sql-sync will store dumps in temporary files.
++# $options['dump-dir'] = '/path/to/dumpdir';
++
++// Enable verbose mode.
++# $options['v'] = 1;
++
++// Show database passwords in 'status' and 'sql-conf' commands
++# $options['show-passwords'] = 1;
++
++// Default logging level for php notices. Defaults to "notice"; set to "warning"
++// if doing drush development. Also make sure that error_reporting is set to E_ALL
++// in your php configuration file. See 'drush status' for the path to your php.ini file.
++# $options['php-notices'] = 'warning';
++
++// Specify options to pass to ssh in backend invoke. (Default is to prohibit password authentication; uncomment to change)
++# $options['ssh-options'] = '-o PasswordAuthentication=no';
++
++/*
++* The output charset suitable to pass to iconv PHP function as out_charset
++* parameter. Drush will convert its output from UTF-8 to the charset specified
++* here. It is possible to use //TRANSLIT and //IGNORE charset name suffixes
++* (see iconv documentation). If not defined conversion will not be performed.
++*/
++# $options['output_charset'] = 'ISO-8859-1';
++# $options['output_charset'] = 'KOI8-R//IGNORE';
++# $options['output_charset'] = 'ISO-8859-1//TRANSLIT';
++
++/*
++* Customize this associative array with your own tables. This is the list of
++* tables whose *data* is skipped by the 'sql-dump' and 'sql-sync' commands when
++* a structure-tables-key is provided. You may add new tables to the existing
++* array or add a new element.
++*/
++$options['structure-tables'] = array(
++ 'common' => array('cache', 'cache_filter', 'cache_menu', 'cache_page', 'history', 'sessions', 'watchdog'),
++);
++
++/*
++* Customize this associative array with your own tables. This is the list of
++* tables that are entirely omitted by the 'sql-dump' and 'sql-sync' commands
++* when a skip-tables-key is provided. This is useful if your database contains
++* non Drupal tables used by some other application or during a migration for
++* example. You may add new tables to the existing array or add a new element.
++*/
++$options['skip-tables'] = array(
++ 'common' => array('migration_data1', 'migration_data2'),
++);
++
++/*
++* Command-specific options
++*
++* To define options that are only applicable to certain commands,
++* make an entry in the 'command-specific' structures as shown below.
++* The name of the command may be either the command's full name
++* or any of the command's aliases.
++*
++* Options defined here will be overridden by options of the same
++* name on the command line. Unary flags such as "--verbose" are overridden
++* via special "--no-xxx" options (e.g. "--no-verbose").
++*
++* Limitation: If 'verbose' is set in a command-specific option,
++* it must be cleared by '--no-verbose', not '--no-v', and visa-versa.
++*/
++# $command_specific['rsync'] = array('verbose' => TRUE);
++# $command_specific['dl'] = array('cvscredentials' => 'user:pass');
++
++$command_specific['dl'] = array('destination' => 'sites/all/modules/contrib');
++
++
++// Specify additional directories to search for scripts
++// Use POSIX path separator (':')
++# $command_specific['script']['script-path'] = 'sites/all/scripts:profiles/myprofile/scripts';
++
++/**
++* Variable overrides:
++*
++* To override specific entries in the 'variable' table for this site,
++* set them here. Any configuration setting from the 'variable'
++* table can be given a new value. We use the $override global here
++* to make sure that changes from settings.php can not wipe out these
++* settings.
++*
++* Remove the leading hash signs to enable.
++*/
++# $override = array(
++# 'site_name' => 'My Drupal site',
++# 'theme_default' => 'minnelli',
++# 'anonymous' => 'Visitor',
++# );
++
++// Shell aliases.
++$options['shell-aliases']['pwdadmin'] = 'upwd admin --password=admin';
++$options['shell-aliases']['frac'] = '!drush -y fra && drush cc all';
++$options['shell-aliases']['madmin'] = '!drush -y dis overlay toolbar && drush en -y diff admin_menu_toolbar devel && drush cc all';
++$options['shell-aliases']['radmin'] = '!drush -y en overlay toolbar && drush dis -y diff admin_menu devel && drush cc all';
++$options['shell-aliases']['cca'] = 'cc all';
+
+--- Diff for: .gitconfig ---
+--- active (~/.gitconfig)
++++ repo (.gitconfig)
+@@ -1,5 +1,5 @@
+ [user]
+-	email = m.e.nielson@gmail.com
++	email = mnielson@tag1consulting.com
+ 	name = Mike Nielson
+ [credential "https://github.com"]
+ 	helper = 
+@@ -27,11 +27,3 @@
+   lgm = log  --all --graph --pretty=format:'%Cred%h%Creset - %C(yellow)%an%Creset - %s %Cgreen(%cr)%Creset' --abbrev-commit --date=relative --author michael@opensourcery.com
+   patch = format-patch --stdout HEAD~1
+   rpatch = reset --hard HEAD~1
+-[core]
+-	editor = vim
+-[rerere]
+-	enabled = true
+-[init]
+-	defaultBranch = main
+-[credential]
+-	helper = cache
