@@ -44,3 +44,4 @@ __pycache__/
 .config/sync_cron.log
 sync_cron.log
 
+.config/tiling-assistant/tiledSessionRestore.json
