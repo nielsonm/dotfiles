@@ -1,4 +1,12 @@
 let g:netrw_dirhistmax  =10
 let g:netrw_dirhistcnt =2
-let g:netrw_dirhist_2='/home/mike/work'
-let g:netrw_dirhist_1='/home/mike/work/wlp'
+let g:netrw_dirhist_2='/home/mike/.gemini/antigravity-cli/skills/custom-module-analysis/scripts'
+let g:netrw_dirhist_1='/home/mike/.gemini/antigravity-cli/skills/custom-module-analysis'
+let g:netrw_dirhist_0='/home/mike/.gemini/antigravity-cli/skills'
+let g:netrw_dirhist_9='/home/mike/.gemini/antigravity-cli'
+let g:netrw_dirhist_8='/home/mike/.gemini'
+let g:netrw_dirhist_7='/home/mike/.gemini/antigravity'
+let g:netrw_dirhist_6='/home/mike/.gemini/antigravity/skills'
+let g:netrw_dirhist_5='/home/mike/.gemini/antigravity/skills/custom-module-analysis'
+let g:netrw_dirhist_4='/home/mike/.gemini/antigravity/skills/custom-module-analysis/scripts'
+let g:netrw_dirhist_3='/home/mike/.gemini/antigravity/skills/custom-module-analysis'
