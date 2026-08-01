@@ -53,3 +53,4 @@ sync_cron.log
 .config/Rygel/MediaExport.xml
 .config/JetBrains/PhpStorm2026.2/migrate.config
 .config/enchant/en_US.dic
+.vim/.netrwhist
