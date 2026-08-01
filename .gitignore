@@ -48,3 +48,4 @@ sync_cron.log
 .config/zoom.conf
 .config/zoomus.conf
 .config/totem/state.ini
+.config/mimeapps.list

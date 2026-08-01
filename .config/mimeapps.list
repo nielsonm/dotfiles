@@ -1,5 +1,0 @@
-
-[Default Applications]
-text/html=thunderbird_thunderbird.desktop
-x-scheme-handler/mid=thunderbird_thunderbird.desktop
-x-scheme-handler/net.thunderbird=thunderbird_thunderbird.desktop
