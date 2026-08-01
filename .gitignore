@@ -54,3 +54,8 @@ sync_cron.log
 .config/JetBrains/PhpStorm2026.2/migrate.config
 .config/enchant/en_US.dic
 .vim/.netrwhist
+.config/gtk-4.0/servers
+.config/enchant/en_US.exc
+.config/Rygel/MediaExport-v1.xml
+.config/Rygel/MediaExport-v1-dlna150.xml
+.config/Rygel/MediaExport-xbox.xml
