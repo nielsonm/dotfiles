@@ -47,3 +47,4 @@ sync_cron.log
 .config/tiling-assistant/tiledSessionRestore.json
 .config/zoom.conf
 .config/zoomus.conf
+.config/totem/state.ini
