@@ -49,3 +49,4 @@ sync_cron.log
 .config/zoomus.conf
 .config/totem/state.ini
 .config/mimeapps.list
+.config/pulse/cookie
