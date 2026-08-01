@@ -59,3 +59,7 @@ sync_cron.log
 .config/Rygel/MediaExport-v1.xml
 .config/Rygel/MediaExport-v1-dlna150.xml
 .config/Rygel/MediaExport-xbox.xml
+.config/gh/hosts.yml
+.config/gh/config.yml
+.config/composer/.htaccess
+.config/JetBrains/PhpStorm2026.2/phpstorm64.vmoptions
