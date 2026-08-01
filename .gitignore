@@ -51,3 +51,4 @@ sync_cron.log
 .config/mimeapps.list
 .config/pulse/cookie
 .config/Rygel/MediaExport.xml
+.config/JetBrains/PhpStorm2026.2/migrate.config
