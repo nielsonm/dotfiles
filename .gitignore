@@ -50,3 +50,4 @@ sync_cron.log
 .config/totem/state.ini
 .config/mimeapps.list
 .config/pulse/cookie
+.config/Rygel/MediaExport.xml
