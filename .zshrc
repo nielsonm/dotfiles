@@ -122,6 +122,10 @@ alias vsc='code'
 # User local binaries & LANDO Path
 export PATH="$HOME/.local/bin:/home/mike/.lando/bin:$PATH";
 
+# Aliases for Lando & Drush
+alias ldrush='lando drush'
+alias ld='lando drush'
+
 # Antigravity (AGY) Aliases & Helpers
 alias ag="agy"
 
