@@ -240,8 +240,8 @@ def main():
         print(f"Switching to existing local branch '{branch_name}'...")
         run_cmd(["git", "checkout", branch_name])
     else:
-        print(f"Creating and switching to new branch '{branch_name}'...")
-        run_cmd(["git", "checkout", "-b", branch_name])
+        print(f"Creating and switching to new branch '{branch_name}' off 'main'...")
+        run_cmd(["git", "checkout", "-b", branch_name, "main"])
 
     # Stage changes
     run_cmd(["git", "add", "-A"])
