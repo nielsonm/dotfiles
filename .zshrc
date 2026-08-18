@@ -118,6 +118,7 @@ alias cl='clear'
 alias ls='ls --color=auto' 2>/dev/null || alias ls='ls -G'
 alias ll='ls -la'
 alias gs='git s'
+alias vs='code'
 alias vsc='code'
 
 # User local binaries & LANDO Path
