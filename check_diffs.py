@@ -43,6 +43,8 @@ DEFAULT_IGNORES = {
     "Cache",
     "google-chrome",
     "Code",
+    "Antigravity",
+    "antigravity",
     "obsidian",
     "libreoffice",
     "evolution",
