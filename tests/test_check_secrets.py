@@ -1,13 +1,20 @@
+import io
+import json
 import os
-import unittest
+import sys
 import tempfile
+import unittest
 from pathlib import Path
+from unittest.mock import patch
+
 from check_secrets import (
     is_ssh_private_key_file,
     scan_file_for_secrets,
     scan_path,
-    is_placeholder
+    is_placeholder,
+    main,
 )
+
 
 class TestCheckSecrets(unittest.TestCase):
 
@@ -16,19 +23,19 @@ class TestCheckSecrets(unittest.TestCase):
         self.assertTrue(is_placeholder("EXAMPLE"))
         self.assertTrue(is_placeholder("xxxxxxxxxxxx"))
         self.assertTrue(is_placeholder("${MY_VAR}"))
+        self.assertTrue(is_placeholder("<API_KEY>"))
         self.assertFalse(is_placeholder("AKIAIOSFODNN7EXAMPLE"))
         self.assertFalse(is_placeholder("ghp_1234567890abcdefghijklmnopqrstuvwxyz"))
 
     def test_is_ssh_private_key_file(self):
-        # Positive SSH private key filenames
         self.assertTrue(is_ssh_private_key_file("id_rsa"))
         self.assertTrue(is_ssh_private_key_file("id_ed25519"))
         self.assertTrue(is_ssh_private_key_file("id_ecdsa"))
         self.assertTrue(is_ssh_private_key_file("id_dsa"))
         self.assertTrue(is_ssh_private_key_file("server_key.pem"))
         self.assertTrue(is_ssh_private_key_file("cert.pkcs12"))
-        
-        # Negative / safe filenames
+        self.assertTrue(is_ssh_private_key_file("secret.key"))
+
         self.assertFalse(is_ssh_private_key_file("id_rsa.pub"))
         self.assertFalse(is_ssh_private_key_file("id_ed25519.pub"))
         self.assertFalse(is_ssh_private_key_file("config.template"))
@@ -62,6 +69,7 @@ class TestCheckSecrets(unittest.TestCase):
             findings = scan_file_for_secrets(aws_file)
             types = [f["type"] for f in findings]
             self.assertIn("AWS Access Key ID", types)
+            self.assertIn("AWS Secret Access Key", types)
 
     def test_scan_file_for_github_pat(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -81,6 +89,15 @@ class TestCheckSecrets(unittest.TestCase):
             types = [f["type"] for f in findings]
             self.assertIn("Slack Token", types)
 
+    def test_scan_file_for_stripe_key(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            stripe_file = Path(tmp_dir) / "stripe.env"
+            stripe_file.write_text("STRIPE_KEY = sk_live_51Abcdefghijklmnopqrstuvwxyz1234\n")
+
+            findings = scan_file_for_secrets(stripe_file)
+            types = [f["type"] for f in findings]
+            self.assertIn("Stripe Secret Key", types)
+
     def test_scan_file_for_openai_key(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             ai_file = Path(tmp_dir) / ".env"
@@ -90,6 +107,23 @@ class TestCheckSecrets(unittest.TestCase):
             types = [f["type"] for f in findings]
             self.assertIn("OpenAI / Anthropic API Key", types)
 
+    def test_scan_file_for_generic_secret(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            sec_file = Path(tmp_dir) / "app.env"
+            sec_file.write_text("client_secret = 'super_secret_database_key_value'\n")
+
+            findings = scan_file_for_secrets(sec_file)
+            types = [f["type"] for f in findings]
+            self.assertIn("Generic Secret / Key Assignment", types)
+
+    def test_scan_binary_file_skipped(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            bin_file = Path(tmp_dir) / "sample.bin"
+            bin_file.write_bytes(b"\x00\x01\x02\x03AKIAIOSFODNN7EXAMPLE\x00\x00")
+
+            findings = scan_file_for_secrets(bin_file)
+            self.assertEqual(len(findings), 0)
+
     def test_clean_file_no_secrets(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             clean_file = Path(tmp_dir) / ".bashrc"
@@ -98,17 +132,63 @@ class TestCheckSecrets(unittest.TestCase):
             findings = scan_file_for_secrets(clean_file)
             self.assertEqual(len(findings), 0)
 
-    def test_scan_path_directory(self):
+    def test_template_file_handling(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            template_file = Path(tmp_dir) / "config.template"
+            template_file.write_text("api_key = 'sample_template_value_here'\n")
+
+            findings = scan_file_for_secrets(template_file)
+            self.assertEqual(len(findings), 0)
+
+    def test_scan_path_single_file_and_directory(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp_path = Path(tmp_dir)
             (tmp_path / ".bashrc").write_text("export TEST=1\n")
             (tmp_path / "id_rsa").write_text("-----BEGIN RSA PRIVATE KEY-----\nkey\n")
 
             ignores = {".git"}
-            results = scan_path(tmp_path, ignores)
+            results_dir = scan_path(tmp_path, ignores)
+            self.assertIn("id_rsa", results_dir)
+            self.assertNotIn(".bashrc", results_dir)
 
-            self.assertIn("id_rsa", results)
-            self.assertNotIn(".bashrc", results)
+            results_file = scan_path(tmp_path / "id_rsa")
+            self.assertIn("id_rsa", results_file)
+
+            results_none = scan_path(tmp_path / "nonexistent")
+            self.assertEqual(len(results_none), 0)
+
+    def test_main_cli_clean_and_json(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            (tmp_path / ".bashrc").write_text("export TEST=1\n")
+
+            test_args = ["check_secrets.py", "-t", str(tmp_path), "--json"]
+            with patch("sys.argv", test_args):
+                captured = io.StringIO()
+                with patch("sys.stdout", captured):
+                    main()
+                data = json.loads(captured.getvalue())
+                self.assertTrue(data["clean"])
+                self.assertEqual(data["total_secrets_found"], 0)
+
+    def test_main_cli_quiet_and_exit_code(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            (tmp_path / ".bashrc").write_text("export AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE\n")
+
+            # With secrets and --exit-code -> should exit with code 1
+            test_args = ["check_secrets.py", "-t", str(tmp_path), "--exit-code"]
+            with patch("sys.argv", test_args):
+                with self.assertRaises(SystemExit) as cm:
+                    main()
+                self.assertEqual(cm.exception.code, 1)
+
+    def test_main_cli_invalid_target(self):
+        with patch("sys.argv", ["check_secrets.py", "-t", "/nonexistent_path"]):
+            with self.assertRaises(SystemExit) as cm:
+                main()
+            self.assertEqual(cm.exception.code, 1)
+
 
 if __name__ == "__main__":
     unittest.main()

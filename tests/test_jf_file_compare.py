@@ -313,6 +313,71 @@ class TestJfFileCompare(unittest.TestCase):
             output = captured_output.getvalue()
             self.assertIn("Directories are perfectly synchronized", output)
 
+    def test_sync_directories_real_copy_and_delete_execution(self):
+        with tempfile.TemporaryDirectory() as src_dir, tempfile.TemporaryDirectory() as dst_dir:
+            src = Path(src_dir)
+            dst = Path(dst_dir)
+
+            (src / "new_video.mp4").write_text("fresh video content")
+            (dst / "old_orphan.mp4").write_text("old orphan file")
+
+            # Execute real sync with orphan deletion
+            captured_output = io.StringIO()
+            sys.stdout = captured_output
+            try:
+                sync_directories(
+                    src_dir=str(src),
+                    dst_dir=str(dst),
+                    direction="push",
+                    compare_mode="mtime_size",
+                    include_extensions=[".mp4"],
+                    sync=True,
+                    dry_run=False,
+                    delete_orphan_dst=True,
+                )
+            finally:
+                sys.stdout = sys.__stdout__
+
+            output = captured_output.getvalue()
+            self.assertIn("[EXECUTING] CREATE: new_video.mp4", output)
+            self.assertIn("[EXECUTING] DELETE: old_orphan.mp4", output)
+            self.assertTrue((dst / "new_video.mp4").exists())
+            self.assertFalse((dst / "old_orphan.mp4").exists())
+
+    def test_sync_directories_pull_direction(self):
+        with tempfile.TemporaryDirectory() as src_dir, tempfile.TemporaryDirectory() as dst_dir:
+            src = Path(src_dir)
+            dst = Path(dst_dir)
+
+            (dst / "remote.mp4").write_text("remote content")
+
+            captured_output = io.StringIO()
+            sys.stdout = captured_output
+            try:
+                sync_directories(
+                    src_dir=str(src),
+                    dst_dir=str(dst),
+                    direction="pull",
+                    compare_mode="size_only",
+                    include_extensions=[".mp4"],
+                    sync=False,
+                    dry_run=True,
+                )
+            finally:
+                sys.stdout = sys.__stdout__
+
+            output = captured_output.getvalue()
+            self.assertIn("[DRY-RUN] CREATE: remote.mp4", output)
+
+    def test_sync_directories_invalid_compare_mode(self):
+        with tempfile.TemporaryDirectory() as src_dir, tempfile.TemporaryDirectory() as dst_dir:
+            with self.assertRaises(ValueError):
+                sync_directories(
+                    src_dir=src_dir,
+                    dst_dir=dst_dir,
+                    compare_mode="unsupported_mode",
+                )
+
 
 if __name__ == "__main__":
     unittest.main()
