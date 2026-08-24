@@ -164,19 +164,33 @@ def scan_file_for_secrets(file_path):
             })
         return findings
 
-    # Don't scan binary or non-text files
+    # Fast binary file detection / bailout
+    try:
+        with open(path, 'rb') as f:
+            header = f.read(1024)
+            if b'\0' in header:
+                return findings
+    except Exception:
+        return findings
+
+    # Don't scan non-text files or files that fail to read
     try:
         with open(path, 'r', encoding='utf-8', errors='replace') as f:
             lines = f.readlines()
-    except Exception as e:
+    except Exception:
         return findings
 
     # Skip files that are explicitly safe templates if no actual key header is present
     is_template = path.name.endswith(".template")
+    trigger_tokens = (':', '=', 'AKIA', 'ghp_', 'gho_', 'github_pat_', 'xox', 'sk_', 'rk_', 'sk-', 'KEY', 'PRIVATE')
 
     for line_idx, line in enumerate(lines, start=1):
         line_clean = line.strip()
         if not line_clean or line_clean.startswith("#"):
+            continue
+
+        # Fast string pre-filter to avoid iterating 8 regexes on non-relevant lines
+        if not any(token in line for token in trigger_tokens):
             continue
 
         for rule_name, regex in SECRET_PATTERNS:

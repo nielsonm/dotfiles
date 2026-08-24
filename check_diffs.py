@@ -8,6 +8,7 @@ import os
 import sys
 import argparse
 import difflib
+import filecmp
 import json
 from pathlib import Path
 
@@ -111,6 +112,20 @@ def compare_file(repo_file_path, target_file_path, rel_path_str):
             "target_file": str(target_file_path),
             "diff": []
         }
+
+    # Fast path: instant comparison for matching files avoiding expensive difflib parsing
+    try:
+        if repo_file_path.stat().st_size == target_file_path.stat().st_size:
+            if filecmp.cmp(repo_file_path, target_file_path, shallow=False):
+                return {
+                    "status": "MATCH",
+                    "rel_path": rel_path_str,
+                    "repo_file": str(repo_file_path),
+                    "target_file": str(target_file_path),
+                    "diff": []
+                }
+    except Exception:
+        pass
 
     try:
         with open(repo_file_path, 'r', encoding='utf-8', errors='replace') as rf:
