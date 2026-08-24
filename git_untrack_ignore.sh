@@ -21,7 +21,7 @@ selected_files=()
 # 3. Interactive Selection (fzf preferred, fallback to Zsh select)
 if command -v fzf >/dev/null 2>&1; then
   echo "Select file(s) to untrack and ignore (Press Tab to multi-select, Enter to confirm):"
-  selected_files=($(git ls-files | fzf -m --prompt="Untrack & Ignore > "))
+  selected_files=($(print -l "${tracked_files[@]}" | fzf -m --prompt="Untrack & Ignore > "))
 else
   echo "fzf is not installed. Using standard Zsh selection menu..."
   PS3="Select a file number to untrack and ignore (or type 'q' to quit): "
@@ -54,10 +54,10 @@ echo ""
 if [[ "$reply" =~ ^[Yy]$ ]]; then
   gitignore_path="$(git rev-parse --show-toplevel)/.gitignore"
 
-  for file in "${selected_files[@]}"; do
-    # Remove from Git index
-    git rm --cached "$file"
+  # Remove all selected files in a single batch git command
+  git rm --cached -- "${selected_files[@]}"
 
+  for file in "${selected_files[@]}"; do
     # Avoid duplicate lines in .gitignore
     if ! grep -qxF "$file" "$gitignore_path" 2>/dev/null; then
       echo "$file" >> "$gitignore_path"

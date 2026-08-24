@@ -10,6 +10,7 @@ import sys
 import shutil
 import subprocess
 import argparse
+import filecmp
 import socket
 from datetime import datetime
 from pathlib import Path
@@ -137,9 +138,8 @@ def sync_active_configs(source_dir, repo_dir, ignores, skip_secrets=True):
                 needs_copy = True
             else:
                 try:
-                    with open(src_file, 'rb') as f1, open(dest_file, 'rb') as f2:
-                        if f1.read() != f2.read():
-                            needs_copy = True
+                    if src_file.stat().st_size != dest_file.stat().st_size or not filecmp.cmp(src_file, dest_file, shallow=False):
+                        needs_copy = True
                 except Exception:
                     needs_copy = True
 

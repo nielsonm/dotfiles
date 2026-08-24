@@ -108,7 +108,7 @@ fi
 
 FUGITIVE_DIR="${DEST_DIR}/.vim/pack/tpope/start/fugitive"
 if [ ! -d "${FUGITIVE_DIR}" ]; then
-  git clone https://tpope.io/vim/fugitive.git "${FUGITIVE_DIR}" || true
+  git clone --depth=1 https://tpope.io/vim/fugitive.git "${FUGITIVE_DIR}" || true
 else
   (cd "${FUGITIVE_DIR}" && git pull --quiet || true)
 fi
@@ -133,14 +133,14 @@ if [ -d "${DEST_DIR}/.oh-my-zsh" ]; then
 
   ZSH_AUTOSUGGEST_DIR="${ZSH_CUSTOM_DIR}/zsh-autosuggestions"
   if [ ! -d "${ZSH_AUTOSUGGEST_DIR}" ]; then
-    git clone https://github.com/zsh-users/zsh-autosuggestions "${ZSH_AUTOSUGGEST_DIR}" || true
+    git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions "${ZSH_AUTOSUGGEST_DIR}" || true
   else
     (cd "${ZSH_AUTOSUGGEST_DIR}" && git pull --quiet || true)
   fi
 
   ZSH_HIGHLIGHT_DIR="${ZSH_CUSTOM_DIR}/zsh-syntax-highlighting"
   if [ ! -d "${ZSH_HIGHLIGHT_DIR}" ]; then
-    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "${ZSH_HIGHLIGHT_DIR}" || true
+    git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git "${ZSH_HIGHLIGHT_DIR}" || true
   else
     (cd "${ZSH_HIGHLIGHT_DIR}" && git pull --quiet || true)
   fi
