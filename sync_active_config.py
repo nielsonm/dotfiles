@@ -105,17 +105,29 @@ def scan_repo_files(repo_dir, ignores):
 
     return sorted(repo_files)
 
-def sync_active_configs(source_dir, repo_dir, ignores, skip_secrets=True):
-    source_path = Path(source_dir).resolve()
-    repo_path = Path(repo_dir).resolve()
+def sync_active_configs(source_dir, repo_dir, ignores, skip_secrets=True, dry_run=False):
+    """Compare and optionally copy active config files from source into repo.
 
-    repo_files = scan_repo_files(repo_path, ignores)
+    Args:
+        source_dir: Path to the active config directory (typically $HOME).
+        repo_dir: Path to the dotfiles repo directory.
+        ignores: Set of file/directory names to skip.
+        skip_secrets: When True, block files containing secrets from syncing.
+        dry_run: When True, only report which files differ without copying.
+
+    Returns:
+        Tuple of (checked_files, updated_files, blocked_files) lists.
+    """
+    source_path = Path(source_dir).resolve()
+    repo_path   = Path(repo_dir).resolve()
+
+    repo_files    = scan_repo_files(repo_path, ignores)
     updated_files = []
     checked_files = []
     blocked_files = []
 
     for rel_path in repo_files:
-        src_file = source_path / rel_path
+        src_file  = source_path / rel_path
         dest_file = repo_path / rel_path
 
         if src_file.exists() and src_file.is_file():
@@ -131,8 +143,6 @@ def sync_active_configs(source_dir, repo_dir, ignores, skip_secrets=True):
                     blocked_files.append(str(rel_path))
                     continue
 
-            dest_file.parent.mkdir(parents=True, exist_ok=True)
-
             needs_copy = False
             if not dest_file.exists():
                 needs_copy = True
@@ -144,10 +154,43 @@ def sync_active_configs(source_dir, repo_dir, ignores, skip_secrets=True):
                     needs_copy = True
 
             if needs_copy:
-                shutil.copy2(src_file, dest_file)
+                if not dry_run:
+                    dest_file.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(src_file, dest_file)
                 updated_files.append(str(rel_path))
 
     return checked_files, updated_files, blocked_files
+
+def stash_if_dirty(repo_dir):
+    """Stash any uncommitted changes to allow clean branch switching.
+
+    Returns:
+        True if changes were stashed, False otherwise.
+    """
+    status = run_cmd(["git", "status", "--porcelain"], cwd=repo_dir)
+    if status.stdout.strip():
+        print("Stashing uncommitted changes before branch switch...")
+        run_cmd(["git", "stash", "push", "-m", "sync_active_config auto-stash"], cwd=repo_dir)
+        return True
+    return False
+
+def stash_pop_if_stashed(repo_dir, was_stashed):
+    """Pop the auto-stash if one was created."""
+    if was_stashed:
+        print("Restoring stashed changes...")
+        run_cmd(["git", "stash", "pop"], cwd=repo_dir, check=False)
+
+def _print_sync_summary(checked, updated, blocked):
+    """Print a summary of the sync operation results."""
+    print(f"Checked {len(checked)} config files.")
+    if blocked:
+        print(f"Secret Guard blocked {len(blocked)} file(s) containing secret keys or tokens.")
+    if updated:
+        print(f"Found {len(updated)} updated config file(s) from active environment:")
+        for u in updated:
+            print(f"  - {u}")
+    else:
+        print("No differences found in active config files.")
 
 def setup_cron_job(script_path):
     abs_script = Path(script_path).resolve()
@@ -169,7 +212,9 @@ def setup_cron_job(script_path):
         print(f"Failed to install cron job: {proc.stderr}", file=sys.stderr)
 
 def main():
-    parser = argparse.ArgumentParser(description="Pull active configs, check for secrets, commit to machine+date branch, and push.")
+    parser = argparse.ArgumentParser(
+        description="Pull active configs, check for secrets, commit to machine+date branch, and push.",
+    )
     parser.add_argument("-s", "--source", default=os.path.expanduser("~"), help="Source active config directory (default: $HOME)")
     parser.add_argument("-r", "--repo", default=os.path.dirname(os.path.abspath(__file__)), help="Repo directory (default: script location)")
     parser.add_argument("-b", "--branch", help="Custom branch name (default: <machine-name>-<YYYY-MM-DD>)")
@@ -181,7 +226,7 @@ def main():
 
     args = parser.parse_args()
 
-    repo_dir = Path(args.repo).resolve()
+    repo_dir   = Path(args.repo).resolve()
     source_dir = Path(args.source).resolve()
 
     if args.install_cron:
@@ -197,59 +242,53 @@ def main():
         print(f"Error: Source directory '{source_dir}' does not exist.", file=sys.stderr)
         sys.exit(1)
 
-    print(f"=== Dotfiles Active Config Sync ===")
-    print(f"Source (Active): {source_dir}")
-    print(f"Target (Repo)  : {repo_dir}")
-
     # Determine machine name & date for branch name
     machine_name = get_machine_name()
-    date_str = datetime.now().strftime("%Y-%m-%d")
+    date_str     = datetime.now().strftime("%Y-%m-%d")
+    branch_name  = sanitize_branch_name(args.branch or f"{machine_name}-{date_str}")
+    skip_secrets = not args.allow_secrets
 
-    if args.branch:
-        branch_name = sanitize_branch_name(args.branch)
-    else:
-        branch_name = sanitize_branch_name(f"{machine_name}-{date_str}")
-
+    print("=== Dotfiles Active Config Sync ===")
+    print(f"Source (Active): {source_dir}")
+    print(f"Target (Repo)  : {repo_dir}")
     print(f"Target Branch  : {branch_name}")
 
-    skip_secrets = not args.allow_secrets
-    checked, updated, blocked = sync_active_configs(source_dir, repo_dir, DEFAULT_IGNORES, skip_secrets=skip_secrets)
-
-    print(f"Checked {len(checked)} config files.")
-    if blocked:
-        print(f"Secret Guard blocked {len(blocked)} file(s) containing secret keys or tokens.")
-    if updated:
-        print(f"Found {len(updated)} updated config file(s) from active environment:")
-        for u in updated:
-            print(f"  - {u}")
-    else:
-        print("No differences found in active config files.")
+    # --- Pre-flight: check what would change (dry-run comparison) ---
+    checked, pending, blocked = sync_active_configs(
+        source_dir, repo_dir, DEFAULT_IGNORES,
+        skip_secrets=skip_secrets, dry_run=True,
+    )
+    _print_sync_summary(checked, pending, blocked)
 
     if args.dry_run:
         print("[Dry Run] Skipping git branch, commit, and push operations.")
         return
 
-    # Git operations
-    os.chdir(repo_dir)
+    if not pending:
+        print("Nothing to sync — skipping branch creation.")
+        return
 
-    # Get current branch
-    cur_branch_res = run_cmd(["git", "rev-parse", "--abbrev-ref", "HEAD"])
-    orig_branch = cur_branch_res.stdout.strip()
+    # --- Stash any uncommitted changes for safe branch switching ---
+    was_stashed = stash_if_dirty(repo_dir)
 
-    # Check if branch exists locally or remotely
-    branch_check = run_cmd(["git", "branch", "--list", branch_name])
+    # --- Switch to (or create) today's branch ---
+    branch_check = run_cmd(["git", "branch", "--list", branch_name], cwd=repo_dir)
     if branch_check.stdout.strip():
         print(f"Switching to existing local branch '{branch_name}'...")
-        run_cmd(["git", "checkout", branch_name])
+        run_cmd(["git", "checkout", branch_name], cwd=repo_dir)
     else:
         print(f"Creating and switching to new branch '{branch_name}' off 'main'...")
-        run_cmd(["git", "checkout", "-b", branch_name, "main"])
+        run_cmd(["git", "checkout", "-b", branch_name, "main"], cwd=repo_dir)
 
-    # Stage changes
-    run_cmd(["git", "add", "-A"])
+    # --- Sync files (now on the correct branch) ---
+    checked, updated, blocked = sync_active_configs(
+        source_dir, repo_dir, DEFAULT_IGNORES,
+        skip_secrets=skip_secrets, dry_run=False,
+    )
 
-    # Check if there are staged changes to commit
-    status_res = run_cmd(["git", "status", "--porcelain"])
+    # --- Stage, commit, push ---
+    run_cmd(["git", "add", "-A"], cwd=repo_dir)
+    status_res     = run_cmd(["git", "status", "--porcelain"], cwd=repo_dir)
     staged_changes = [line for line in status_res.stdout.splitlines() if line.strip()]
 
     if not staged_changes:
@@ -257,18 +296,22 @@ def main():
     else:
         commit_msg = f"Sync active dotfiles from {machine_name} on {date_str}"
         print(f"Committing changes: '{commit_msg}'...")
-        run_cmd(["git", "commit", "-m", commit_msg])
+        run_cmd(["git", "commit", "-m", commit_msg], cwd=repo_dir)
 
         if args.no_push:
             print("Skipping push (--no-push specified).")
         else:
             print(f"Pushing branch '{branch_name}' to remote '{args.remote}'...")
-            push_res = run_cmd(["git", "push", "-u", args.remote, branch_name], check=False)
+            push_res = run_cmd(
+                ["git", "push", "-u", args.remote, branch_name],
+                cwd=repo_dir, check=False,
+            )
             if push_res.returncode == 0:
                 print(f"Successfully pushed branch '{branch_name}' to '{args.remote}'.")
             else:
                 print(f"Warning: Push to '{args.remote}' failed:\n{push_res.stderr}", file=sys.stderr)
 
+    stash_pop_if_stashed(repo_dir, was_stashed)
     print("Sync complete!")
 
 if __name__ == "__main__":
