@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Pre-commit hook: prevent direct commits to protected branches.
+#
+# Protected branches default to: main, master, develop
+# Override via git config:
+#   git config hooks.protectedBranches "main,staging,production"
+#
+# Emergency bypass:
+#   ALLOW_DIRECT_COMMIT=1 git commit -m "hotfix"
+
+set -euo pipefail
+
+branch=$(git symbolic-ref --short HEAD 2>/dev/null || true)
+
+if [[ -z "$branch" ]]; then
+  # Detached HEAD — nothing to protect.
+  exit 0
+fi
+
+# Allow explicit override for emergencies.
+if [[ "${ALLOW_DIRECT_COMMIT:-0}" == "1" ]]; then
+  echo "⚠️  ALLOW_DIRECT_COMMIT is set — bypassing branch protection."
+  exit 0
+fi
+
+# Read protected branches from git config, fall back to defaults.
+protected_csv=$(git config --get hooks.protectedBranches 2>/dev/null || echo "main,master,develop")
+IFS=',' read -ra protected <<< "$protected_csv"
+
+for b in "${protected[@]}"; do
+  if [[ "$branch" == "$b" ]]; then
+    echo "🚫 Direct commits to '$branch' are not allowed."
+    echo "   Create a feature branch first:"
+    echo "     git checkout -b feat/my-change"
+    echo ""
+    echo "   To bypass in an emergency:"
+    echo "     ALLOW_DIRECT_COMMIT=1 git commit -m \"hotfix\""
+    exit 1
+  fi
+done
