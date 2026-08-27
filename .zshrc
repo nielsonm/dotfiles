@@ -114,6 +114,7 @@ setopt HIST_IGNORE_DUPS      # Do not record duplicate entries
 autoload -U compinit && compinit
 
 # Useful Aliases
+alias cl='clear'
 alias ls='ls --color=auto' 2>/dev/null || alias ls='ls -G'
 alias ll='ls -la'
 alias gs='git s'
@@ -139,6 +140,65 @@ agadd() {
 
 agreview() {
   git diff | agy "Review these changes for potential bugs or code quality improvements"
+}
+
+gcai() {
+  # Resolve the git repo root so agy runs with the correct context.
+  local repo_root
+  repo_root=$(git rev-parse --show-toplevel 2>/dev/null)
+  if [[ -z "$repo_root" ]]; then
+    echo "Not inside a git repository."
+    return 1
+  fi
+
+  # Bail early if nothing is staged.
+  if git diff --cached --quiet 2>/dev/null; then
+    echo "No staged changes found. Stage files with 'git add' first."
+    return 1
+  fi
+
+  echo "Generating commit message from staged changes..."
+  local diff msg
+  diff=$(git diff --cached)
+
+  # Run agy from the repo root so its internal git operations work correctly.
+  msg=$(cd "$repo_root" && echo "$diff" | agy --print "Write a concise conventional commit message for these staged changes. Output ONLY the commit message, no quotes, backticks, or explanation.")
+
+  if [[ -z "$msg" ]]; then
+    echo "Failed to generate a commit message."
+    return 1
+  fi
+
+  echo "\n\033[1;36mSuggested commit message:\033[0m"
+  echo "\033[0;33m$msg\033[0m\n"
+
+  local confirm
+  read "confirm?Commit with this message? [y]es / [e]dit / [n]o: "
+
+  case "$confirm" in
+    y|Y|yes)
+      git commit -m "$msg"
+      ;;
+    e|E|edit)
+      local tmpfile
+      tmpfile=$(mktemp /tmp/gcai-msg-XXXXXX)
+      echo "$msg" > "$tmpfile"
+      ${EDITOR:-vim} "$tmpfile"
+      local edited_msg
+      edited_msg=$(cat "$tmpfile")
+      rm -f "$tmpfile"
+      if [[ -n "$edited_msg" ]]; then
+        git commit -m "$edited_msg"
+      else
+        echo "Empty message — commit aborted."
+        return 1
+      fi
+      ;;
+    *)
+      echo "Commit aborted."
+      return 1
+      ;;
+  esac
 }
 
 export NVM_DIR="$HOME/.nvm"
