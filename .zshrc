@@ -161,8 +161,20 @@ gcai() {
   local diff msg
   diff=$(git diff --cached)
 
-  # Run agy from the repo root so its internal git operations work correctly.
-  msg=$(cd "$repo_root" && echo "$diff" | agy --print "Write a concise conventional commit message for these staged changes. Output ONLY the commit message, no quotes, backticks, or explanation.")
+  # Embed the diff in the prompt — agy ignores piped stdin.
+  msg=$(agy --print "Write a commit message for the following staged diff using the Conventional Commits 1.0.0 specification (https://www.conventionalcommits.org/en/v1.0.0/).
+
+Format: <type>[optional scope]: <description>
+
+Rules:
+- type MUST be one of: feat, fix, build, chore, ci, docs, style, refactor, perf, test
+- scope is optional and describes the section of the codebase (e.g. parser, api)
+- description MUST be a concise imperative summary (lowercase, no period)
+- Do NOT include a body or footer unless the change is a BREAKING CHANGE
+- Output ONLY the commit message — no quotes, backticks, markdown, or explanation
+
+Diff:
+$diff")
 
   if [[ -z "$msg" ]]; then
     echo "Failed to generate a commit message."
