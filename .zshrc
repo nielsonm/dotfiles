@@ -127,6 +127,10 @@ export PATH="$HOME/.local/bin:/home/mike/.lando/bin:$PATH";
 alias ldrush='lando drush'
 alias ld='lando drush'
 
+# VPN aliases
+alias vpn-on='openvpn3 session-start --config mnielson'
+alias vpn-off='openvpn3 session-manage --disconnect -c mnielson'
+
 # Antigravity (AGY) Aliases & Helpers
 alias ag="agy"
 
