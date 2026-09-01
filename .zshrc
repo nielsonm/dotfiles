@@ -147,6 +147,40 @@ agreview() {
 }
 
 gcai() {
+  local ticket=""
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -t|--ticket)
+        if [[ -n "$2" && "$2" != -* ]]; then
+          ticket="$2"
+          shift 2
+        else
+          echo "Error: -t/--ticket requires a ticket number argument."
+          return 1
+        fi
+        ;;
+      -t=*|--ticket=*)
+        ticket="${1#*=}"
+        shift
+        ;;
+      -h|--help)
+        echo "Usage: gcai [-t|--ticket <ticket>] [<ticket>]"
+        echo "Generate an AI commit message for staged changes with optional ticket number prepended."
+        return 0
+        ;;
+      *)
+        if [[ -z "$ticket" ]]; then
+          ticket="$1"
+        else
+          echo "Unknown option or extra argument: $1"
+          return 1
+        fi
+        shift
+        ;;
+    esac
+  done
+
   # Resolve the git repo root so agy runs with the correct context.
   local repo_root
   repo_root=$(git rev-parse --show-toplevel 2>/dev/null)
@@ -161,12 +195,19 @@ gcai() {
     return 1
   fi
 
-  echo "Generating commit message from staged changes..."
-  local diff msg
-  diff=$(git diff --cached)
+  if [[ -n "$ticket" ]]; then
+    echo "Generating commit message for ticket: $ticket..."
+  else
+    echo "Generating commit message from staged changes..."
+  fi
 
-  # Embed the diff in the prompt — agy ignores piped stdin.
-  msg=$(agy --print "Write a commit message for the following staged diff using the Conventional Commits 1.0.0 specification (https://www.conventionalcommits.org/en/v1.0.0/).
+  local difffile msg
+  difffile=$(mktemp /tmp/gcai-diff-XXXXXX.patch)
+  git diff --cached > "$difffile"
+
+  # Write the diff to a file so agy can read it with its tools —
+  # inline embedding breaks on special chars and agy ignores piped stdin.
+  msg=$(agy --print "Read the git diff at $difffile and write a commit message using the Conventional Commits 1.0.0 specification.
 
 Format: <type>[optional scope]: <description>
 
@@ -175,14 +216,20 @@ Rules:
 - scope is optional and describes the section of the codebase (e.g. parser, api)
 - description MUST be a concise imperative summary (lowercase, no period)
 - Do NOT include a body or footer unless the change is a BREAKING CHANGE
-- Output ONLY the commit message — no quotes, backticks, markdown, or explanation
-
-Diff:
-$diff")
+- Output ONLY the commit message — no quotes, backticks, markdown, or explanation")
+  rm -f "$difffile"
 
   if [[ -z "$msg" ]]; then
     echo "Failed to generate a commit message."
     return 1
+  fi
+
+  if [[ -n "$ticket" ]]; then
+    if [[ "$ticket" == \[*\] ]] || [[ "$ticket" == *: ]]; then
+      msg="$ticket $msg"
+    else
+      msg="[$ticket] $msg"
+    fi
   fi
 
   echo "\n\033[1;36mSuggested commit message:\033[0m"
