@@ -151,6 +151,8 @@ agreview() {
 gcai() {
   local ticket=""
   local -a context_args=()
+  local is_first=1
+  local ticket_pattern="^(\\[.+\\]|[A-Za-z0-9_]+-[A-Za-z0-9_]+|#?[0-9]+|.+:)$"
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -186,14 +188,21 @@ gcai() {
         return 0
         ;;
       *)
-        if [[ -z "$ticket" && "$1" =~ ^[A-Z]+-[0-9]+$ ]]; then
-          ticket="$1"
+        if [[ -z "$ticket" && $is_first -eq 1 ]]; then
+          if [[ "$1" =~ $ticket_pattern ]]; then
+            ticket="$1"
+          elif [[ $# -eq 1 && ! "$1" =~ [[:space:]] ]]; then
+            ticket="$1"
+          else
+            context_args+=("$1")
+          fi
         else
           context_args+=("$1")
         fi
         shift
         ;;
     esac
+    is_first=0
   done
 
   local context="${context_args[*]}"
@@ -235,14 +244,11 @@ Rules:
 - scope is optional and describes the section of the codebase (e.g. parser, api)
 - description MUST be a concise imperative summary (lowercase, no period)
 - Do NOT include a body or footer unless the change is a BREAKING CHANGE
+- Do NOT include the ticket/issue prefix in your output as it will be prepended automatically
 - Output ONLY the commit message — no quotes, backticks, markdown, or explanation"
 
   if [[ -n "$context" ]]; then
     prompt+=$'\n\n'"User instructions / context to incorporate in the commit message:"$'\n'"$context"
-  fi
-
-  if [[ -n "$ticket" ]]; then
-    prompt+=$'\n\n'"Ticket reference: $ticket"
   fi
 
   # Write the diff to a file so agy can read it with its tools —
