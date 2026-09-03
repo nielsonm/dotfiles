@@ -150,6 +150,7 @@ agreview() {
 
 gcai() {
   local ticket=""
+  local -a context_args=()
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -166,22 +167,36 @@ gcai() {
         ticket="${1#*=}"
         shift
         ;;
+      -m|--message|-c|--context)
+        if [[ -n "$2" ]]; then
+          context_args+=("$2")
+          shift 2
+        else
+          echo "Error: $1 requires an argument."
+          return 1
+        fi
+        ;;
+      -m=*|--message=*|-c=*|--context=*)
+        context_args+=("${1#*=}")
+        shift
+        ;;
       -h|--help)
-        echo "Usage: gcai [-t|--ticket <ticket>] [<ticket>]"
-        echo "Generate an AI commit message for staged changes with optional ticket number prepended."
+        echo "Usage: gcai [-t|--ticket <ticket>] [-m|--message <context>] [<context/ticket>...]"
+        echo "Generate an AI commit message for staged changes with optional ticket number and context."
         return 0
         ;;
       *)
-        if [[ -z "$ticket" ]]; then
+        if [[ -z "$ticket" && "$1" =~ ^[A-Z]+-[0-9]+$ ]]; then
           ticket="$1"
         else
-          echo "Unknown option or extra argument: $1"
-          return 1
+          context_args+=("$1")
         fi
         shift
         ;;
     esac
   done
+
+  local context="${context_args[*]}"
 
   # Resolve the git repo root so agy runs with the correct context.
   local repo_root
@@ -197,8 +212,12 @@ gcai() {
     return 1
   fi
 
-  if [[ -n "$ticket" ]]; then
+  if [[ -n "$ticket" && -n "$context" ]]; then
+    echo "Generating commit message for ticket $ticket with context: \"$context\"..."
+  elif [[ -n "$ticket" ]]; then
     echo "Generating commit message for ticket: $ticket..."
+  elif [[ -n "$context" ]]; then
+    echo "Generating commit message with context: \"$context\"..."
   else
     echo "Generating commit message from staged changes..."
   fi
@@ -207,9 +226,7 @@ gcai() {
   difffile=$(mktemp /tmp/gcai-diff-XXXXXX.patch)
   git diff --cached > "$difffile"
 
-  # Write the diff to a file so agy can read it with its tools —
-  # inline embedding breaks on special chars and agy ignores piped stdin.
-  msg=$(agy --print "Read the git diff at $difffile and write a commit message using the Conventional Commits 1.0.0 specification.
+  local prompt="Read the git diff at $difffile and write a commit message using the Conventional Commits 1.0.0 specification.
 
 Format: <type>[optional scope]: <description>
 
@@ -218,7 +235,19 @@ Rules:
 - scope is optional and describes the section of the codebase (e.g. parser, api)
 - description MUST be a concise imperative summary (lowercase, no period)
 - Do NOT include a body or footer unless the change is a BREAKING CHANGE
-- Output ONLY the commit message — no quotes, backticks, markdown, or explanation")
+- Output ONLY the commit message — no quotes, backticks, markdown, or explanation"
+
+  if [[ -n "$context" ]]; then
+    prompt+=$'\n\n'"User instructions / context to incorporate in the commit message:"$'\n'"$context"
+  fi
+
+  if [[ -n "$ticket" ]]; then
+    prompt+=$'\n\n'"Ticket reference: $ticket"
+  fi
+
+  # Write the diff to a file so agy can read it with its tools —
+  # inline embedding breaks on special chars and agy ignores piped stdin.
+  msg=$(agy --print "$prompt")
   rm -f "$difffile"
 
   if [[ -z "$msg" ]]; then
@@ -226,11 +255,16 @@ Rules:
     return 1
   fi
 
+  # Clean up any potential markdown formatting or quotes from AI response
+  msg=$(echo "$msg" | sed -e 's/^```[a-zA-Z]*//' -e 's/```$//' -e '/^[[:space:]]*$/d' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/^["'"'"']//' -e 's/["'"'"']$//')
+
   if [[ -n "$ticket" ]]; then
-    if [[ "$ticket" == \[*\] ]] || [[ "$ticket" == *: ]]; then
-      msg="$ticket $msg"
-    else
-      msg="[$ticket] $msg"
+    if [[ "$msg" != *"$ticket"* ]]; then
+      if [[ "$ticket" == \[*\] ]] || [[ "$ticket" == *: ]]; then
+        msg="$ticket $msg"
+      else
+        msg="[$ticket] $msg"
+      fi
     fi
   fi
 
