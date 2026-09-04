@@ -189,6 +189,134 @@ class TestCheckSecrets(unittest.TestCase):
                 main()
             self.assertEqual(cm.exception.code, 1)
 
+    def test_main_cli_clean_without_quiet(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            (tmp_path / "clean.txt").write_text("Hello world\n")
+
+            test_args = ["check_secrets.py", "-t", str(tmp_path)]
+            with patch("sys.argv", test_args):
+                captured = io.StringIO()
+                with patch("sys.stdout", captured):
+                    main()
+                self.assertIn("[OK] Secret Scanner: No SSH private keys or secrets found", captured.getvalue())
+
+    def test_main_cli_clean_with_quiet(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            (tmp_path / "clean.txt").write_text("Hello world\n")
+
+            test_args = ["check_secrets.py", "-t", str(tmp_path), "-q"]
+            with patch("sys.argv", test_args):
+                captured = io.StringIO()
+                with patch("sys.stdout", captured):
+                    main()
+                self.assertEqual(captured.getvalue(), "")
+
+    def test_main_cli_with_secrets_and_json(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            (tmp_path / "secret.env").write_text("OPENAI_API_KEY=sk-proj-1234567890abcdefghijklmnopqrstuvwxyz123456\n")
+
+            test_args = ["check_secrets.py", "-t", str(tmp_path), "--json"]
+            with patch("sys.argv", test_args):
+                captured = io.StringIO()
+                with patch("sys.stdout", captured):
+                    main()
+                data = json.loads(captured.getvalue())
+                self.assertFalse(data["clean"])
+                self.assertEqual(data["total_secrets_found"], 1)
+                self.assertIn("secret.env", data["results"])
+
+    def test_main_cli_with_secrets_plain_output(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            (tmp_path / "secret.env").write_text("OPENAI_API_KEY=sk-proj-1234567890abcdefghijklmnopqrstuvwxyz123456\n")
+
+            test_args = ["check_secrets.py", "-t", str(tmp_path)]
+            with patch("sys.argv", test_args):
+                captured = io.StringIO()
+                with patch("sys.stdout", captured):
+                    main()
+                output = captured.getvalue()
+                self.assertIn("[WARNING] Secret Scanner detected 1 potential secret(s)", output)
+                self.assertIn("File: secret.env", output)
+                self.assertIn("OpenAI / Anthropic API Key", output)
+
+    def test_ssh_key_file_read_error(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            key_file = Path(tmp_dir) / "id_rsa"
+            key_file.write_text("dummy")
+
+            # Mock read_text to raise an exception
+            with patch.object(Path, "read_text", side_effect=PermissionError("Permission denied")):
+                findings = scan_file_for_secrets(key_file)
+                self.assertEqual(len(findings), 1)
+                self.assertEqual(findings[0]["type"], "SSH Private Key File")
+                self.assertIn("unread: Permission denied", findings[0]["detail"])
+
+    def test_ssh_key_empty_file(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            key_file = Path(tmp_dir) / "id_ecdsa"
+            key_file.write_text("")
+            findings = scan_file_for_secrets(key_file)
+            self.assertEqual(len(findings), 1)
+            self.assertEqual(findings[0]["snippet"], "")
+
+    def test_file_read_errors_handled_gracefully(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            sample_file = Path(tmp_dir) / "test.txt"
+            sample_file.write_text("some content")
+
+            # Mock open to fail
+            with patch("builtins.open", side_effect=PermissionError("Access denied")):
+                findings = scan_file_for_secrets(sample_file)
+                self.assertEqual(findings, [])
+
+    def test_scan_path_with_ignored_subdirectories(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            git_dir = root / ".git"
+            git_dir.mkdir()
+            (git_dir / "secret_in_git.txt").write_text("OPENAI_API_KEY=sk-proj-1234567890abcdefghijklmnopqrstuvwxyz123456\n")
+
+            cache_dir = root / "Cache"
+            cache_dir.mkdir()
+            (cache_dir / "secret_in_cache.txt").write_text("OPENAI_API_KEY=sk-proj-1234567890abcdefghijklmnopqrstuvwxyz123456\n")
+
+            normal_file = root / "script.sh"
+            normal_file.write_text("echo 'hello'\n")
+
+            results = scan_path(root)
+            self.assertEqual(len(results), 0)
+
+    def test_scan_path_single_file_in_ignores(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            readme = Path(tmp_dir) / "README.md"
+            readme.write_text("OPENAI_API_KEY=sk-proj-1234567890abcdefghijklmnopqrstuvwxyz123456\n")
+
+            results = scan_path(readme)
+            self.assertEqual(len(results), 0)
+
+    def test_additional_placeholder_cases(self):
+        self.assertTrue(is_placeholder("your_password_here"))
+        self.assertTrue(is_placeholder("YOUR_AWS_KEY"))
+        self.assertTrue(is_placeholder("changeme"))
+        self.assertTrue(is_placeholder("undefined"))
+        self.assertTrue(is_placeholder("null"))
+        self.assertTrue(is_placeholder("none"))
+        self.assertTrue(is_placeholder("foo"))
+        self.assertTrue(is_placeholder("bar"))
+        self.assertTrue(is_placeholder("123456"))
+        self.assertTrue(is_placeholder("000000000"))
+
+    def test_line_comment_and_blank_lines_skipped(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            f = Path(tmp_dir) / "test.conf"
+            f.write_text("\n\n# AKIAIOSFODNN7EXAMPLE this is a comment\n   \n")
+            findings = scan_file_for_secrets(f)
+            self.assertEqual(len(findings), 0)
+
 
 if __name__ == "__main__":
     unittest.main()
