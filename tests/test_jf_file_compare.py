@@ -378,6 +378,149 @@ class TestJfFileCompare(unittest.TestCase):
                     compare_mode="unsupported_mode",
                 )
 
+    def test_normalize_extensions_and_patterns(self):
+        from jfFileCompare import _normalize_extensions, _normalize_patterns
+        self.assertEqual(_normalize_extensions(None), ())
+        self.assertEqual(_normalize_extensions([]), ())
+        self.assertEqual(_normalize_extensions(["mp4", ".MKV", "JPG"]), (".jpg", ".mkv", ".mp4"))
+
+        self.assertEqual(_normalize_patterns(None), ())
+        self.assertEqual(_normalize_patterns([]), ())
+        self.assertEqual(_normalize_patterns([" antigravity ", "TEST", ""]), ("antigravity", "test"))
+
+    def test_hash_candidates_parallel_empty_and_large_file(self):
+        from jfFileCompare import hash_candidates_parallel
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            self.assertEqual(hash_candidates_parallel(root, []), {})
+
+            # Create large file > 3MB to exercise head/middle/tail sample hashing
+            large_file = root / "large.bin"
+            large_file.write_bytes(b"A" * (4 * 1024 * 1024))
+
+            hashes_sample = hash_candidates_parallel(root, ["large.bin"], mode="sample_hash")
+            self.assertIn("large.bin", hashes_sample)
+            self.assertEqual(len(hashes_sample["large.bin"]), 64)
+
+            hashes_full = hash_candidates_parallel(root, ["large.bin"], mode="full_hash")
+            self.assertIn("large.bin", hashes_full)
+            self.assertEqual(len(hashes_full["large.bin"]), 64)
+
+    def test_probe_metadata_empty_and_nonexistent_parent(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            self.assertEqual(probe_metadata(root, []), {})
+
+            # Parent exists but is not a directory (it's a file)
+            fake_parent = root / "fake_file"
+            fake_parent.write_text("not a dir")
+            meta = probe_metadata(root, ["fake_file/child.txt"])
+            self.assertEqual(meta, {})
+
+    def test_print_cli_command_mirror_and_size_only(self):
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        try:
+            print_cli_command(
+                Path("/tmp/src"),
+                Path("/tmp/dst"),
+                mirror=True,
+                compare_mode="size_only",
+                exclude_extensions=[".tmp", ".bak"],
+                exclude_patterns=["temp"],
+            )
+        finally:
+            sys.stdout = sys.__stdout__
+
+        output = captured_output.getvalue()
+        self.assertIn("--delete", output)
+        self.assertIn(" --size-only", output)
+        self.assertIn("/PURGE", output)
+        self.assertIn('--exclude="*temp*"', output)
+
+    def test_sync_directories_nested_directory_creation(self):
+        with tempfile.TemporaryDirectory() as src_dir, tempfile.TemporaryDirectory() as dst_dir:
+            src = Path(src_dir)
+            dst = Path(dst_dir)
+
+            nested_file = src / "deep" / "nested" / "folder" / "video.mp4"
+            nested_file.parent.mkdir(parents=True)
+            nested_file.write_text("deep video")
+
+            captured_output = io.StringIO()
+            sys.stdout = captured_output
+            try:
+                sync_directories(
+                    src_dir=str(src),
+                    dst_dir=str(dst),
+                    direction="push",
+                    compare_mode="mtime_size",
+                    include_extensions=[".mp4"],
+                    sync=True,
+                    dry_run=False,
+                )
+            finally:
+                sys.stdout = sys.__stdout__
+
+            output = captured_output.getvalue()
+            self.assertIn("[EXECUTING] CREATE: deep/nested/folder/video.mp4", output)
+            self.assertTrue((dst / "deep" / "nested" / "folder" / "video.mp4").exists())
+
+    def test_workers_directly_in_process(self):
+        from jfFileCompare import _sample_hash_worker, _full_hash_worker
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            small_file = root / "small.txt"
+            small_file.write_bytes(b"hello world")
+
+            rel, h_small = _sample_hash_worker(str(small_file), str(root))
+            self.assertEqual(rel, "small.txt")
+            self.assertEqual(len(h_small), 64)
+
+            rel_full, h_full = _full_hash_worker(str(small_file), str(root))
+            self.assertEqual(rel_full, "small.txt")
+            self.assertEqual(len(h_full), 64)
+
+            # Test large file with > 3MB to exercise head, middle, tail branches
+            large_file = root / "large.bin"
+            large_file.write_bytes(b"X" * (4 * 1024 * 1024))
+            rel_large, h_large = _sample_hash_worker(str(large_file), str(root))
+            self.assertEqual(rel_large, "large.bin")
+            self.assertEqual(len(h_large), 64)
+
+    def test_sync_directories_size_mismatch_and_orphan_deletion(self):
+        with tempfile.TemporaryDirectory() as src_dir, tempfile.TemporaryDirectory() as dst_dir:
+            src = Path(src_dir)
+            dst = Path(dst_dir)
+
+            # Size mismatch
+            (src / "diff_size.txt").write_text("1234567890")
+            (dst / "diff_size.txt").write_text("123")
+
+            # Orphan file
+            (dst / "orphan.txt").write_text("orphan")
+
+            captured_output = io.StringIO()
+            sys.stdout = captured_output
+            try:
+                sync_directories(
+                    src_dir=str(src),
+                    dst_dir=str(dst),
+                    direction="push",
+                    compare_mode="mtime_size",
+                    sync=True,
+                    dry_run=False,
+                    delete_orphan_dst=True,
+                )
+            finally:
+                sys.stdout = sys.__stdout__
+
+            output = captured_output.getvalue()
+            self.assertIn("[EXECUTING] UPDATE: diff_size.txt", output)
+            self.assertIn("[EXECUTING] DELETE: orphan.txt", output)
+            self.assertFalse((dst / "orphan.txt").exists())
+            self.assertEqual((dst / "diff_size.txt").read_text(), "1234567890")
+
 
 if __name__ == "__main__":
     unittest.main()
