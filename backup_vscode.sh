@@ -35,6 +35,6 @@ elif [ "$1" == "restore" ]; then
     echo "Restore completed successfully!"
 
 else
-    echo "Usage: ./vscode_sync.sh [backup|restore]"
+    echo "Usage: ./backup_vscode.sh [backup|restore]"
 fi
 
