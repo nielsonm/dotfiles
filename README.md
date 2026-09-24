@@ -45,20 +45,30 @@ Cross-platform installer for macOS and Linux. Features:
 - **Vim Plugin Bootstrapping**: Downloads Pathogen (`pathogen.vim`), clones/updates `vim-fugitive`, and clones `syntastic`.
 - **Oh My Zsh Plugin Bootstrapping**: Clones/updates `zsh-autosuggestions` and `zsh-syntax-highlighting` into `~/.oh-my-zsh/custom/plugins`.
 - **OS Package Checks**: Inspects system package availability (Homebrew on macOS; `apt`, `dnf`, or `pacman` on Linux).
+- **Automated Crontab Setup**: Installs daily dotfiles sync (9:00 AM) and VS Code backup (7:00 AM) jobs in a managed block within your user crontab.
 
 ```bash
-# Run installation into $HOME
+# Run installation into $HOME (includes crontab setup)
 ./install.sh
+
+# Run installation without modifying crontab
+./install.sh --no-cron
+# or
+SKIP_CRON=true ./install.sh
 
 # Run installation into a custom target directory
 ./install.sh /custom/target/path
 ```
 
 ### `uninstall.sh`
-Safely removes symlinks created by `install.sh` and restores original `.bak` configuration files and directories.
+Safely removes symlinks created by `install.sh`, restores original `.bak` configuration files and directories, and cleanly removes the managed dotfiles crontab block (preserving any other user cron jobs).
 
 ```bash
+# Run uninstallation and restore original state
 ./uninstall.sh
+
+# Run uninstallation without touching crontab
+./uninstall.sh --no-cron
 ```
 
 ---
