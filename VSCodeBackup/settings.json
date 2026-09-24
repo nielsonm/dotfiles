@@ -1,0 +1,20 @@
+{
+    "workbench.iconTheme": "vscode-icons",
+    "yaml.disableSchemaDetection": [
+        "**/.github/workflows/*.yml",
+        "**/.github/workflows/*.yaml",
+        "**/.gitea/workflows/*.yml",
+        "**/.gitea/workflows/*.yaml",
+        "**/.forgejo/workflows/*.yml",
+        "**/.forgejo/workflows/*.yaml"
+    ],
+    "git.autofetch": true,
+    "makefile.configureOnOpen": true,
+    "git.confirmSync": false,
+    "git.openRepositoryInParentFolders": "always",
+    "workbench.editor.enablePreview": false,
+    "gitblame.extendedHoverInformation": "inline",
+    "docker.extension.enableComposeLanguageServer": false,
+    "gitblame.inlineMessageEnabled": true,
+    "gitblame.inlineMessageFormat": "${author.name} (${time.ago})"
+}
