@@ -115,6 +115,8 @@ autoload -U compinit && compinit
 
 # Useful Aliases
 alias o='open'
+alias c='cl'
+alias x='exit'
 alias cl='clear'
 alias ls='ls --color=auto' 2>/dev/null || alias ls='ls -G'
 alias ll='ls -la'
@@ -148,7 +150,7 @@ agreview() {
   git diff | agy "Review these changes for potential bugs or code quality improvements"
 }
 
-gcai() {
+aggc() {
   local ticket=""
   local -a context_args=()
   local is_first=1
@@ -183,7 +185,7 @@ gcai() {
         shift
         ;;
       -h|--help)
-        echo "Usage: gcai [-t|--ticket <ticket>] [-m|--message <context>] [<context/ticket>...]"
+        echo "Usage: aggc [-t|--ticket <ticket>] [-m|--message <context>] [<context/ticket>...]"
         echo "Generate an AI commit message for staged changes with optional ticket number and context."
         return 0
         ;;
@@ -232,7 +234,7 @@ gcai() {
   fi
 
   local difffile msg
-  difffile=$(mktemp /tmp/gcai-diff-XXXXXX.patch)
+  difffile=$(mktemp /tmp/aggc-diff-XXXXXX.patch)
   git diff --cached > "$difffile"
 
   local prompt="Read the git diff at $difffile and write a commit message using the Conventional Commits 1.0.0 specification.
@@ -286,7 +288,7 @@ Rules:
       ;;
     e|E|edit)
       local tmpfile
-      tmpfile=$(mktemp /tmp/gcai-msg-XXXXXX)
+      tmpfile=$(mktemp /tmp/aggc-msg-XXXXXX)
       echo "$msg" > "$tmpfile"
       ${EDITOR:-vim} "$tmpfile"
       local edited_msg
