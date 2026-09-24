@@ -14,9 +14,38 @@ echo "========================================="
 echo " Installing dotfiles for: ${PLATFORM}"
 echo "========================================="
 
-# Set source and destination directories
+# Parse arguments
+DEST_DIR=""
+SETUP_CRON=true
+if [ "${SKIP_CRON:-false}" = "true" ] || [ "${SKIP_CRON:-0}" = "1" ]; then
+  SETUP_CRON=false
+fi
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --no-cron)
+      SETUP_CRON=false
+      shift
+      ;;
+    --with-cron)
+      SETUP_CRON=true
+      shift
+      ;;
+    -h|--help)
+      echo "Usage: ./install.sh [DEST_DIR] [--no-cron]"
+      exit 0
+      ;;
+    *)
+      if [ -z "${DEST_DIR}" ]; then
+        DEST_DIR="$1"
+      fi
+      shift
+      ;;
+  esac
+done
+
 SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DEST_DIR="${1:-$HOME}"
+DEST_DIR="${DEST_DIR:-$HOME}"
 
 echo "Source Directory     : ${SRC_DIR}"
 echo "Destination Directory: ${DEST_DIR}"
@@ -175,6 +204,54 @@ elif [ "${IS_LINUX}" = true ]; then
     echo "  [Arch Linux detected]"
   fi
 fi
+
+# Automated crontab setup
+setup_crontab() {
+  echo ""
+  echo "--> Setting up automated crontab jobs..."
+  if [ "${SETUP_CRON}" != true ]; then
+    echo "  [Crontab] Skipped (--no-cron or SKIP_CRON specified)."
+    return 0
+  fi
+
+  if ! command -v crontab >/dev/null 2>&1; then
+    echo "  [Crontab] Notice: 'crontab' command not found. Skipping cron configuration."
+    return 0
+  fi
+
+  local existing_cron
+  existing_cron="$(crontab -l 2>/dev/null || true)"
+
+  # Strip any existing dotfiles managed block
+  local clean_cron
+  clean_cron="$(echo "${existing_cron}" | sed '/# BEGIN DOTFILES MANAGED BLOCK/,/# END DOTFILES MANAGED BLOCK/d' || true)"
+  # Trim extra blank lines
+  clean_cron="$(echo "${clean_cron}" | awk 'NF {p=1} p')"
+
+  local managed_block
+  managed_block="$(cat <<EOF
+# BEGIN DOTFILES MANAGED BLOCK
+0 9 * * * ${SRC_DIR}/sync_active_config.sh >> ${SRC_DIR}/sync_cron.log 2>&1
+0 7 * * * /bin/bash ${SRC_DIR}/backup_vscode.sh backup >> ${SRC_DIR}/vscode_backup.log 2>&1
+# END DOTFILES MANAGED BLOCK
+EOF
+)"
+
+  local new_cron
+  if [ -n "${clean_cron}" ]; then
+    new_cron="${clean_cron}"$'\n'"${managed_block}"
+  else
+    new_cron="${managed_block}"
+  fi
+
+  if echo "${new_cron}" | crontab -; then
+    echo "  [Crontab] Successfully configured dotfiles daily sync and backup jobs."
+  else
+    echo "  [Crontab] Warning: Failed to update crontab." >&2
+  fi
+}
+
+setup_crontab
 
 echo ""
 echo "========================================="
