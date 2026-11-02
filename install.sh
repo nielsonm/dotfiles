@@ -232,7 +232,7 @@ setup_crontab() {
   managed_block="$(cat <<EOF
 # BEGIN DOTFILES MANAGED BLOCK
 0 9 * * * ${SRC_DIR}/sync_active_config.sh >> ${SRC_DIR}/sync_cron.log 2>&1
-0 7 * * * /bin/bash ${SRC_DIR}/backup_vscode.sh backup >> ${SRC_DIR}/vscode_backup.log 2>&1
+0 7 * * * /bin/bash ${SRC_DIR}/vscode_sync.sh backup >> ${SRC_DIR}/vscode_backup.log 2>&1
 # END DOTFILES MANAGED BLOCK
 EOF
 )"
