@@ -1,6 +1,6 @@
 # Installation & Setup Guide
 
-The dotfiles repository provides an idempotent, non-destructive installer ([`install.sh`](file:///home/mike/work/dotfiles/install.sh)) and a full restore utility ([`uninstall.sh`](file:///home/mike/work/dotfiles/uninstall.sh)).
+The dotfiles repository provides an idempotent, non-destructive installer ([`install.sh`](https://github.com/nielsonm/dotfiles/blob/main/install.sh)) and a full restore utility ([`uninstall.sh`](https://github.com/nielsonm/dotfiles/blob/main/uninstall.sh)).
 
 ---
 

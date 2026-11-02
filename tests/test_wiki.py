@@ -43,23 +43,38 @@ class TestWikiBuild(unittest.TestCase):
                 self.assertGreater(len(html), 0, f"Rendered HTML for {md_file.name} is empty")
 
     def test_wiki_internal_and_file_links(self):
-        """Verifies that internal wiki links and local file references resolve to existing targets."""
+        """Verifies that internal wiki links, repository GitHub URLs, and file references resolve to existing targets."""
         link_pattern = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
+        gh_blob_prefix = "https://github.com/nielsonm/dotfiles/blob/main/"
+        gh_tree_prefix = "https://github.com/nielsonm/dotfiles/tree/main/"
 
         for md_file in self.wiki_files:
             with self.subTest(file=md_file.name):
                 text = md_file.read_text(encoding="utf-8")
                 for label, target in link_pattern.findall(text):
-                    # Skip external web URLs
-                    if target.startswith("http://") or target.startswith("https://"):
+                    # Check GitHub repository blob & tree links to ensure they point to real repo files
+                    if target.startswith(gh_blob_prefix) or target.startswith(gh_tree_prefix):
+                        prefix = gh_blob_prefix if target.startswith(gh_blob_prefix) else gh_tree_prefix
+                        rel_path = target[len(prefix):].split("#")[0]
+                        target_file = self.repo_root / rel_path
+                        self.assertTrue(
+                            target_file.exists(),
+                            f"Broken repo link in {md_file.name}: '{target}' -> path '{target_file}' does not exist in repository",
+                        )
+                    # Skip other external web URLs
+                    elif target.startswith("http://") or target.startswith("https://"):
                         continue
-                    # Check local absolute file links
+                    # Check local absolute file links (supporting both local and CI paths)
                     elif target.startswith("file://"):
                         clean_path = target.split("#")[0].replace("file://", "")
-                        resolved = Path(clean_path)
+                        if "dotfiles/" in clean_path:
+                            rel_subpath = clean_path.split("dotfiles/", 1)[1]
+                            resolved = self.repo_root / rel_subpath
+                        else:
+                            resolved = Path(clean_path)
                         self.assertTrue(
                             resolved.exists(),
-                            f"Broken file link in {md_file.name}: '{target}' -> path '{clean_path}' does not exist",
+                            f"Broken file link in {md_file.name}: '{target}' -> path '{resolved}' does not exist",
                         )
                     # Check internal wiki links
                     else:

@@ -24,13 +24,13 @@ python3 -m unittest discover -v tests
 
 | Test Module | Coverage Area | Key Verification Scenarios |
 | :--- | :--- | :--- |
-| **[`test_wiki.py`](file:///home/mike/work/dotfiles/tests/test_wiki.py)** | GitHub Wiki Validation | Verifies `Home.md`, `_Sidebar.md`, `_Footer.md`, clean HTML compilation of all Markdown, internal & file link integrity, code fence balancing, and navigation sidebar validation. |
-| **[`test_find_media_duplicates.py`](file:///home/mike/work/dotfiles/tests/test_find_media_duplicates.py)** | Duplicate Media Scanner | Two-stage hashing, cross-format (`.epub`/`.azw3`), episode separation (`S01E01` != `S01E02`), VobSub pairing, `.filepart` detection, non-destructive `# rm` generation. |
-| **[`test_jf_file_compare.py`](file:///home/mike/work/dotfiles/tests/test_jf_file_compare.py)** | Jellyfin CIFS Sync | Extension presets, metadata caching, probe performance, sample hashing, dry-run synchronization plans. |
-| **[`test_check_secrets.py`](file:///home/mike/work/dotfiles/tests/test_check_secrets.py)** | Secret & SSH Key Scanner | Signature patterns (AWS, GitHub, Slack, OpenAI, SSH private keys), Shannon entropy detection, JSON formatting, exit code flags. |
-| **[`test_check_diffs.py`](file:///home/mike/work/dotfiles/tests/test_check_diffs.py)** | Config Drift Auditor | Home directory comparison, unified diff generation, missing/added file detection, output report generation. |
-| **[`test_sync_active_config.py`](file:///home/mike/work/dotfiles/tests/test_sync_active_config.py)** | Active Config Sync | Pulling tracked configs, secret gate enforcement, stash handling, machine-and-date branch creation. |
-| **[`test_install_uninstall.py`](file:///home/mike/work/dotfiles/tests/test_install_uninstall.py)** | Install & Uninstall | Symlink creation, `.bak` backup/restore, crontab managed block creation and idempotency, `--no-cron` flag. |
+| **[`test_wiki.py`](https://github.com/nielsonm/dotfiles/blob/main/tests/test_wiki.py)** | GitHub Wiki Validation | Verifies `Home.md`, `_Sidebar.md`, `_Footer.md`, clean HTML compilation of all Markdown, internal & file link integrity, code fence balancing, and navigation sidebar validation. |
+| **[`test_find_media_duplicates.py`](https://github.com/nielsonm/dotfiles/blob/main/tests/test_find_media_duplicates.py)** | Duplicate Media Scanner | Two-stage hashing, cross-format (`.epub`/`.azw3`), episode separation (`S01E01` != `S01E02`), VobSub pairing, `.filepart` detection, non-destructive `# rm` generation. |
+| **[`test_jf_file_compare.py`](https://github.com/nielsonm/dotfiles/blob/main/tests/test_jf_file_compare.py)** | Jellyfin CIFS Sync | Extension presets, metadata caching, probe performance, sample hashing, dry-run synchronization plans. |
+| **[`test_check_secrets.py`](https://github.com/nielsonm/dotfiles/blob/main/tests/test_check_secrets.py)** | Secret & SSH Key Scanner | Signature patterns (AWS, GitHub, Slack, OpenAI, SSH private keys), Shannon entropy detection, JSON formatting, exit code flags. |
+| **[`test_check_diffs.py`](https://github.com/nielsonm/dotfiles/blob/main/tests/test_check_diffs.py)** | Config Drift Auditor | Home directory comparison, unified diff generation, missing/added file detection, output report generation. |
+| **[`test_sync_active_config.py`](https://github.com/nielsonm/dotfiles/blob/main/tests/test_sync_active_config.py)** | Active Config Sync | Pulling tracked configs, secret gate enforcement, stash handling, machine-and-date branch creation. |
+| **[`test_install_uninstall.py`](https://github.com/nielsonm/dotfiles/blob/main/tests/test_install_uninstall.py)** | Install & Uninstall | Symlink creation, `.bak` backup/restore, crontab managed block creation and idempotency, `--no-cron` flag. |
 
 ---
 

@@ -7,7 +7,7 @@ The repository includes proactive security auditing to prevent accidental commit
 ## 1. Secret & SSH Key Guard (`check_secrets.py`)
 
 ### Overview
-Located at [`check_secrets.py`](file:///home/mike/work/dotfiles/check_secrets.py) (wrapper: [`check_secrets.sh`](file:///home/mike/work/dotfiles/check_secrets.sh)). Scans directories or specific files against signature patterns and Shannon entropy thresholds.
+Located at [`check_secrets.py`](https://github.com/nielsonm/dotfiles/blob/main/check_secrets.py) (wrapper: [`check_secrets.sh`](https://github.com/nielsonm/dotfiles/blob/main/check_secrets.sh)). Scans directories or specific files against signature patterns and Shannon entropy thresholds.
 
 ### Detection Signatures:
 - **SSH Private Keys**: OpenSSH, RSA, DSA, EC, PGP, and Putty PPK private keys.
@@ -46,12 +46,12 @@ Located at [`check_secrets.py`](file:///home/mike/work/dotfiles/check_secrets.py
 ## 2. Active Config Drift Auditor (`check_diffs.py`)
 
 ### Overview
-Located at [`check_diffs.py`](file:///home/mike/work/dotfiles/check_diffs.py) (wrapper: [`check_diffs.sh`](file:///home/mike/work/dotfiles/check_diffs.sh)). Compares currently active system files in `$HOME` against the repository copies to detect uncommitted drift or changes made directly outside the repo.
+Located at [`check_diffs.py`](https://github.com/nielsonm/dotfiles/blob/main/check_diffs.py) (wrapper: [`check_diffs.sh`](https://github.com/nielsonm/dotfiles/blob/main/check_diffs.sh)). Compares currently active system files in `$HOME` against the repository copies to detect uncommitted drift or changes made directly outside the repo.
 
 ### Features:
 - Detects modified, added, and missing files.
 - Generates clean, colorized unified diffs.
-- Writes full inspection reports to [`diff_report.txt`](file:///home/mike/work/dotfiles/diff_report.txt).
+- Writes full inspection reports to [`diff_report.txt`](https://github.com/nielsonm/dotfiles/blob/main/diff_report.txt).
 
 ### Usage
 ```bash

@@ -1,12 +1,12 @@
 # Visual Studio Code Synchronization
 
-VS Code settings, keybindings, code snippets, and installed extensions are synchronized and backed up via [`vscode_sync.sh`](file:///home/mike/work/dotfiles/vscode_sync.sh) (aliased to `backup_vscode.sh`).
+VS Code settings, keybindings, code snippets, and installed extensions are synchronized and backed up via [`vscode_sync.sh`](https://github.com/nielsonm/dotfiles/blob/main/vscode_sync.sh) (aliased to `backup_vscode.sh`).
 
 ---
 
 ## 1. Directory Structure
 
-Stored under [`VSCodeBackup/`](file:///home/mike/work/dotfiles/VSCodeBackup):
+Stored under [`VSCodeBackup/`](https://github.com/nielsonm/dotfiles/tree/main/VSCodeBackup):
 ```
 VSCodeBackup/
 ├── settings.json       # User settings
@@ -40,8 +40,8 @@ VSCodeBackup/
 
 ## 3. Automated Backup Cron
 
-Configured via [`install.sh#L235`](file:///home/mike/work/dotfiles/install.sh#L235):
+Configured via [`install.sh#L235`](https://github.com/nielsonm/dotfiles/blob/main/install.sh#L235):
 ```cron
 0 7 * * * /bin/bash /home/mike/work/dotfiles/vscode_sync.sh backup >> /home/mike/work/dotfiles/vscode_backup.log 2>&1
 ```
-Runs daily at 7:00 AM, logging backup status to [`vscode_backup.log`](file:///home/mike/work/dotfiles/vscode_backup.log).
+Runs daily at 7:00 AM, logging backup status to [`vscode_backup.log`](https://github.com/nielsonm/dotfiles/blob/main/vscode_backup.log).

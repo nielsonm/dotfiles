@@ -6,7 +6,7 @@ This repository contains high-performance media management tools designed for la
 
 ## 1. Jellyfin File Compare & Sync (`jfFileCompare.py`)
 
-Located at [`jfFileCompare.py`](file:///home/mike/work/dotfiles/jfFileCompare.py). Synchronizes local downloads with Jellyfin CIFS/SMB media shares.
+Located at [`jfFileCompare.py`](https://github.com/nielsonm/dotfiles/blob/main/jfFileCompare.py). Synchronizes local downloads with Jellyfin CIFS/SMB media shares.
 
 ### Key Capabilities:
 - **Fast Directory-Batched Metadata**: Replaces hundreds of slow remote `stat()` roundtrips across CIFS with single directory `scandir` batches.
@@ -21,10 +21,10 @@ Located at [`jfFileCompare.py`](file:///home/mike/work/dotfiles/jfFileCompare.py
 
 ## 2. Media Duplicate Scanner (`find_media_duplicates.py`)
 
-Located at [`find_media_duplicates.py`](file:///home/mike/work/dotfiles/find_media_duplicates.py). Identifies exact duplicate files, cross-format duplicates, leftover files, and similar media titles.
+Located at [`find_media_duplicates.py`](https://github.com/nielsonm/dotfiles/blob/main/find_media_duplicates.py). Identifies exact duplicate files, cross-format duplicates, leftover files, and similar media titles.
 
 ### Safety Guarantee:
-**Strictly Non-Destructive**: The script never deletes any files. It generates an inspectable shell script ([`cleanup_duplicates.sh`](file:///home/mike/work/dotfiles/cleanup_duplicates.sh)) where all removal commands are commented out (`# rm -v -- '...'`) with preferred master files marked `[KEEP]`.
+**Strictly Non-Destructive**: The script never deletes any files. It generates an inspectable shell script ([`cleanup_duplicates.sh`](https://github.com/nielsonm/dotfiles/blob/main/cleanup_duplicates.sh)) where all removal commands are commented out (`# rm -v -- '...'`) with preferred master files marked `[KEEP]`.
 
 ### Detection Categories:
 1. **Category 1: Exact Byte-for-Byte Duplicates**:
@@ -55,5 +55,5 @@ python3 find_media_duplicates.py --similarity-threshold 0.90
 ```
 
 ### Generated Outputs:
-- [`duplicates_report.txt`](file:///home/mike/work/dotfiles/duplicates_report.txt): Complete human-readable breakdown.
-- [`cleanup_duplicates.sh`](file:///home/mike/work/dotfiles/cleanup_duplicates.sh): Safely commented-out shell commands.
+- [`duplicates_report.txt`](https://github.com/nielsonm/dotfiles/blob/main/duplicates_report.txt): Complete human-readable breakdown.
+- [`cleanup_duplicates.sh`](https://github.com/nielsonm/dotfiles/blob/main/cleanup_duplicates.sh): Safely commented-out shell commands.

@@ -8,14 +8,14 @@ Welcome to the **Dotfiles & Systems Automation Wiki**. This repository manages c
 
 | Component / System | Status | Key Script / Entry Point | Description |
 | :--- | :---: | :--- | :--- |
-| **Dotfiles Core** | ![Passing](https://img.shields.io/badge/status-active-success) | [`install.sh`](file:///home/mike/work/dotfiles/install.sh) | Symlinks configurations with automatic `.bak` backups |
+| **Dotfiles Core** | ![Passing](https://img.shields.io/badge/status-active-success) | [`install.sh`](https://github.com/nielsonm/dotfiles/blob/main/install.sh) | Symlinks configurations with automatic `.bak` backups |
 | **Automated Testing** | ![95/95 Tests Passing](https://img.shields.io/badge/tests-95%2F95%20passing-brightgreen) | `make test` / `python3 -m unittest` | Full unittest discovery across 7 test modules |
-| **Secret & SSH Guard** | ![Passing](https://img.shields.io/badge/security-enforced-blue) | [`check_secrets.py`](file:///home/mike/work/dotfiles/check_secrets.py) | Scans for API tokens, private SSH keys, and secrets |
-| **Configuration Audit** | ![Passing](https://img.shields.io/badge/audit-active-blue) | [`check_diffs.py`](file:///home/mike/work/dotfiles/check_diffs.py) | Unified diff audit between `$HOME` and repository |
-| **Daily Config Sync** | ![Scheduled](https://img.shields.io/badge/cron-09%3A00%20daily-orange) | [`sync_active_config.py`](file:///home/mike/work/dotfiles/sync_active_config.py) | Daily automated branch sync with secret safeguards |
-| **VS Code Sync** | ![Scheduled](https://img.shields.io/badge/cron-07%3A00%20daily-orange) | [`vscode_sync.sh`](file:///home/mike/work/dotfiles/vscode_sync.sh) | Settings, keybindings, snippets, and extension backups |
-| **Jellyfin File Compare** | ![Passing](https://img.shields.io/badge/tool-ready-blue) | [`jfFileCompare.py`](file:///home/mike/work/dotfiles/jfFileCompare.py) | Fast multi-threaded CIFS/local media synchronization |
-| **Media Duplicate Scanner** | ![Passing](https://img.shields.io/badge/tool-ready-blue) | [`find_media_duplicates.py`](file:///home/mike/work/dotfiles/find_media_duplicates.py) | Safe, non-destructive duplicate media scanner & cleaner |
+| **Secret & SSH Guard** | ![Passing](https://img.shields.io/badge/security-enforced-blue) | [`check_secrets.py`](https://github.com/nielsonm/dotfiles/blob/main/check_secrets.py) | Scans for API tokens, private SSH keys, and secrets |
+| **Configuration Audit** | ![Passing](https://img.shields.io/badge/audit-active-blue) | [`check_diffs.py`](https://github.com/nielsonm/dotfiles/blob/main/check_diffs.py) | Unified diff audit between `$HOME` and repository |
+| **Daily Config Sync** | ![Scheduled](https://img.shields.io/badge/cron-09%3A00%20daily-orange) | [`sync_active_config.py`](https://github.com/nielsonm/dotfiles/blob/main/sync_active_config.py) | Daily automated branch sync with secret safeguards |
+| **VS Code Sync** | ![Scheduled](https://img.shields.io/badge/cron-07%3A00%20daily-orange) | [`vscode_sync.sh`](https://github.com/nielsonm/dotfiles/blob/main/vscode_sync.sh) | Settings, keybindings, snippets, and extension backups |
+| **Jellyfin File Compare** | ![Passing](https://img.shields.io/badge/tool-ready-blue) | [`jfFileCompare.py`](https://github.com/nielsonm/dotfiles/blob/main/jfFileCompare.py) | Fast multi-threaded CIFS/local media synchronization |
+| **Media Duplicate Scanner** | ![Passing](https://img.shields.io/badge/tool-ready-blue) | [`find_media_duplicates.py`](https://github.com/nielsonm/dotfiles/blob/main/find_media_duplicates.py) | Safe, non-destructive duplicate media scanner & cleaner |
 
 ---
 
