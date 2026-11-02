@@ -34,7 +34,7 @@ MEDIA_EXTENSIONS = (
     # Audio
     ".aac", ".aiff", ".alac", ".flac", ".m4a", ".mp3", ".ogg", ".opus", ".wav", ".wma",
     # Images
-    # ".bmp", ".gif", ".heic", ".jpeg", ".jpg", ".png", ".svg", ".tiff", ".webp",
+    ".bmp", ".gif", ".heic", ".jpeg", ".jpg", ".png", ".svg", ".tiff", ".webp",
     # Subtitles
     ".ass", ".idx", ".ssa", ".srt", ".sub", ".vtt",
     # Ebooks
