@@ -72,6 +72,15 @@ ZSH_THEME="robbyrussell"
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(git aliases zsh-autosuggestions zsh-syntax-highlighting)
 
+# Fish-style Autosuggestions configuration (zsh-autosuggestions)
+export ZSH_AUTOSUGGEST_STRATEGY=(history completion)
+export ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20
+export ZSH_AUTOSUGGEST_USE_ASYNC=1
+export ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=8"
+
+# Pre-load menu selection module before compinit / oh-my-zsh
+zmodload -i zsh/complist 2>/dev/null || true
+
 source $ZSH/oh-my-zsh.sh
 
 # User configuration
@@ -110,8 +119,16 @@ SAVEHIST=10000
 setopt SHARE_HISTORY         # Share history across shell sessions
 setopt HIST_IGNORE_DUPS      # Do not record duplicate entries
 
-# Enable auto-completion
+# Enable auto-completion & Fish-style interactive completion menu
 autoload -U compinit && compinit
+zstyle ':completion:*' menu select
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'
+zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
+
+# Keybindings for accepting suggestions (Fish-style)
+bindkey '^ ' autosuggest-accept 2>/dev/null || true        # Ctrl+Space to accept suggestion
+bindkey '^f' forward-word 2>/dev/null || true              # Ctrl+F to accept one word
+bindkey '^e' autosuggest-accept 2>/dev/null || true        # Ctrl+E to accept full suggestion
 
 # Useful Aliases
 alias o='open'
@@ -132,8 +149,8 @@ alias ldrush='lando drush'
 alias ld='lando drush'
 
 # VPN aliases
-alias vpn-on='openvpn3 session-start --config mnielson'
-alias vpn-off='openvpn3 session-manage --disconnect -c mnielson'
+alias vpn-on='openvpn3 session-start --config mnielson@USC'
+alias vpn-off='openvpn3 session-manage --disconnect -c mnielson@USC'
 
 # Antigravity (AGY) Aliases & Helpers
 alias ag="agy"

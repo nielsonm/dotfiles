@@ -378,6 +378,7 @@ class TestJfFileCompare(unittest.TestCase):
                     compare_mode="unsupported_mode",
                 )
 
+<<<<<<< HEAD
     def test_normalize_extensions_and_patterns(self):
         from jfFileCompare import _normalize_extensions, _normalize_patterns
         self.assertEqual(_normalize_extensions(None), ())
@@ -446,16 +447,163 @@ class TestJfFileCompare(unittest.TestCase):
             nested_file = src / "deep" / "nested" / "folder" / "video.mp4"
             nested_file.parent.mkdir(parents=True)
             nested_file.write_text("deep video")
+=======
+    def test_sync_directories_multiple_destinations_rel_path_match(self):
+        with tempfile.TemporaryDirectory() as src_dir, \
+             tempfile.TemporaryDirectory() as lib1_dir, \
+             tempfile.TemporaryDirectory() as lib2_dir:
+            src = Path(src_dir)
+            lib1 = Path(lib1_dir)
+            lib2 = Path(lib2_dir)
+
+            (src / "movie1.mp4").write_text("movie 1 content")
+            (src / "movie2.mp4").write_text("movie 2 content")
+            (lib1 / "movie1.mp4").write_text("movie 1 content")
+            (lib2 / "movie2.mp4").write_text("movie 2 content")
+
+            now = time.time()
+            for p in (src / "movie1.mp4", src / "movie2.mp4", lib1 / "movie1.mp4", lib2 / "movie2.mp4"):
+                os.utime(p, (now, now))
+>>>>>>> a3e06d6 (feat: support multi-destination sync in jffilecompare and update zshrc)
 
             captured_output = io.StringIO()
             sys.stdout = captured_output
             try:
                 sync_directories(
+<<<<<<< HEAD
                     src_dir=str(src),
                     dst_dir=str(dst),
                     direction="push",
                     compare_mode="mtime_size",
                     include_extensions=[".mp4"],
+=======
+                    src_dir=src,
+                    dst_dirs=[lib1, lib2],
+                    compare_mode="mtime_size",
+                    include_extensions=[".mp4"],
+                    dry_run=True,
+                )
+            finally:
+                sys.stdout = sys.__stdout__
+
+            output = captured_output.getvalue()
+            self.assertIn("Directories are perfectly synchronized", output)
+
+    def test_sync_directories_multiple_destinations_filename_fallback(self):
+        with tempfile.TemporaryDirectory() as src_dir, \
+             tempfile.TemporaryDirectory() as movies_dir, \
+             tempfile.TemporaryDirectory() as tv_dir:
+            src = Path(src_dir)
+            movies = Path(movies_dir)
+            tv = Path(tv_dir)
+
+            # In src, flat file
+            (src / "Inception.mkv").write_text("film data")
+            # In library, nested in subfolder
+            movie_sub = movies / "Inception (2010)"
+            movie_sub.mkdir()
+            (movie_sub / "Inception.mkv").write_text("film data")
+
+            now = time.time()
+            os.utime(src / "Inception.mkv", (now, now))
+            os.utime(movie_sub / "Inception.mkv", (now, now))
+
+            captured_output = io.StringIO()
+            sys.stdout = captured_output
+            try:
+                sync_directories(
+                    src_dir=src,
+                    dst_dirs=[movies, tv],
+                    compare_mode="mtime_size",
+                    match_by_filename=True,
+                    include_extensions=[".mkv"],
+                    dry_run=True,
+                )
+            finally:
+                sys.stdout = sys.__stdout__
+
+            output = captured_output.getvalue()
+            self.assertIn("Directories are perfectly synchronized", output)
+
+    def test_sync_directories_multiple_destinations_missing_and_modified(self):
+        with tempfile.TemporaryDirectory() as src_dir, \
+             tempfile.TemporaryDirectory() as lib1_dir, \
+             tempfile.TemporaryDirectory() as lib2_dir:
+            src = Path(src_dir)
+            lib1 = Path(lib1_dir)
+            lib2 = Path(lib2_dir)
+
+            (src / "exists_in_lib1.mp4").write_text("lib1 version new")
+            (lib1 / "exists_in_lib1.mp4").write_text("lib1 version old different size")
+
+            (src / "exists_in_lib2.mp4").write_text("lib2 exact")
+            (lib2 / "exists_in_lib2.mp4").write_text("lib2 exact")
+
+            (src / "completely_missing.mp4").write_text("brand new")
+
+            now = time.time()
+            os.utime(src / "exists_in_lib2.mp4", (now, now))
+            os.utime(lib2 / "exists_in_lib2.mp4", (now, now))
+
+            captured_output = io.StringIO()
+            sys.stdout = captured_output
+            try:
+                sync_directories(
+                    src_dir=src,
+                    dst_dirs=[lib1, lib2],
+                    compare_mode="size_only",
+                    include_extensions=[".mp4"],
+                    dry_run=True,
+                )
+            finally:
+                sys.stdout = sys.__stdout__
+
+            output = captured_output.getvalue()
+            self.assertIn("Missing on Target (To Create) : 1", output)
+            self.assertIn("Modified on Source (To Update): 1", output)
+            self.assertIn("[DRY-RUN] CREATE: completely_missing.mp4", output)
+            self.assertIn("[DRY-RUN] UPDATE: exists_in_lib1.mp4", output)
+
+    def test_print_cli_command_multiple_destinations(self):
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        try:
+            print_cli_command(
+                Path("/tmp/src"),
+                [Path("/tmp/movies"), Path("/tmp/tv")],
+                include_extensions=[".mp4"],
+            )
+        finally:
+            sys.stdout = sys.__stdout__
+
+        output = captured_output.getvalue()
+        self.assertIn('--- Destination: /tmp/movies ---', output)
+        self.assertIn('--- Destination: /tmp/tv ---', output)
+        self.assertIn('rsync -avh --progress --exclude="*antigravity*" --include="*/" --include="*.mp4" --exclude="*" "/tmp/src/" "/tmp/movies/"', output)
+        self.assertIn('rsync -avh --progress --exclude="*antigravity*" --include="*/" --include="*.mp4" --exclude="*" "/tmp/src/" "/tmp/tv/"', output)
+
+    def test_sync_directories_copy_new_only(self):
+        with tempfile.TemporaryDirectory() as src_dir, tempfile.TemporaryDirectory() as dst_dir:
+            src = Path(src_dir)
+            dst = Path(dst_dir)
+
+            # Modified file: same name, different content
+            (src / "existing.mp4").write_text("updated content in source")
+            (dst / "existing.mp4").write_text("old content in dst")
+
+            # Brand new file: only in src
+            (src / "brand_new.mp4").write_text("brand new file")
+
+            captured_output = io.StringIO()
+            sys.stdout = captured_output
+            try:
+                sync_directories(
+                    src_dir=src,
+                    dst_dir=dst,
+                    compare_mode="mtime_size",
+                    copy_new_only=True,
+                    include_extensions=[".mp4"],
+>>>>>>> a3e06d6 (feat: support multi-destination sync in jffilecompare and update zshrc)
                     sync=True,
                     dry_run=False,
                 )
@@ -463,6 +611,7 @@ class TestJfFileCompare(unittest.TestCase):
                 sys.stdout = sys.__stdout__
 
             output = captured_output.getvalue()
+<<<<<<< HEAD
             self.assertIn("[EXECUTING] CREATE: deep/nested/folder/video.mp4", output)
             self.assertTrue((dst / "deep" / "nested" / "folder" / "video.mp4").exists())
 
@@ -520,6 +669,32 @@ class TestJfFileCompare(unittest.TestCase):
             self.assertIn("[EXECUTING] DELETE: orphan.txt", output)
             self.assertFalse((dst / "orphan.txt").exists())
             self.assertEqual((dst / "diff_size.txt").read_text(), "1234567890")
+=======
+            self.assertIn("Missing on Target (To Create) : 1", output)
+            self.assertIn("Modified on Source (To Update): 0", output)
+            self.assertIn("[EXECUTING] CREATE: brand_new.mp4", output)
+            self.assertNotIn("UPDATE:", output)
+
+            # Verify brand new was copied, existing was untouched
+            self.assertEqual((dst / "brand_new.mp4").read_text(), "brand new file")
+            self.assertEqual((dst / "existing.mp4").read_text(), "old content in dst")
+
+    def test_print_cli_command_copy_new_only(self):
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        try:
+            print_cli_command(
+                Path("/tmp/src"),
+                Path("/tmp/dst"),
+                copy_new_only=True,
+            )
+        finally:
+            sys.stdout = sys.__stdout__
+
+        output = captured_output.getvalue()
+        self.assertIn("--ignore-existing", output)
+        self.assertIn("/XC /XN /XO", output)
+>>>>>>> a3e06d6 (feat: support multi-destination sync in jffilecompare and update zshrc)
 
 
 if __name__ == "__main__":

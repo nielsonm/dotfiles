@@ -34,7 +34,7 @@ MEDIA_EXTENSIONS = (
     # Audio
     ".aac", ".aiff", ".alac", ".flac", ".m4a", ".mp3", ".ogg", ".opus", ".wav", ".wma",
     # Images
-    ".bmp", ".gif", ".heic", ".jpeg", ".jpg", ".png", ".svg", ".tiff", ".webp",
+    # ".bmp", ".gif", ".heic", ".jpeg", ".jpg", ".png", ".svg", ".tiff", ".webp",
     # Subtitles
     ".ass", ".idx", ".ssa", ".srt", ".sub", ".vtt",
     # Ebooks
@@ -283,15 +283,23 @@ def scan_metadata(
 # ----------------- CLI COMMAND GENERATOR ----------------- #
 
 def print_cli_command(
-    src: Path,
-    dst: Path,
+    src: Path | str,
+    dst: Path | str | list[Path | str] | tuple[Path | str, ...],
     mirror: bool = False,
     compare_mode: str = "mtime_size",
     include_extensions: set[str] | tuple[str, ...] | list[str] | None = None,
     exclude_extensions: set[str] | tuple[str, ...] | list[str] | None = None,
     exclude_patterns: set[str] | tuple[str, ...] | list[str] | None = None,
+    copy_new_only: bool = False,
 ):
     """Generates optimal OS-level sync commands."""
+    if isinstance(dst, (list, tuple)):
+        dst_list = [Path(d) for d in dst]
+    else:
+        dst_list = [Path(dst)]
+
+    src_path = Path(src)
+
     if exclude_extensions is None:
         exclude_extensions = DEFAULT_EXCLUDE_EXTENSIONS
     if exclude_patterns is None:
@@ -303,8 +311,8 @@ def print_cli_command(
 
     # Linux / macOS (rsync)
     delete_flag = " --delete" if mirror else ""
-    src_str = str(src).rstrip("/") + "/"
-    dst_str = str(dst).rstrip("/") + "/"
+    ignore_existing_flag = " --ignore-existing" if copy_new_only else ""
+    src_str = str(src_path).rstrip("/") + "/"
 
     rsync_filters = []
     for pat in normalized_patterns:
@@ -329,6 +337,7 @@ def print_cli_command(
 
     # Windows (Robocopy)
     purge_flag = " /PURGE" if mirror else ""
+    new_only_flag = " /XC /XN /XO" if copy_new_only else ""
     robocopy_files = (" " + " ".join(f"*{ext}" for ext in normalized_includes)) if normalized_includes else ""
 
     robocopy_xd = [f"*{pat}*" for pat in normalized_patterns] + [f"*{d}*" for d in DEFAULT_EXCLUDE_DIR_NAMES]
@@ -340,18 +349,22 @@ def print_cli_command(
     print("\n" + "=" * 60)
     print("NATIVE CLI COMMAND EQUIVALENTS:")
     print("=" * 60)
-    print("POSIX / Linux (rsync):")
-    print(f"  rsync -avh --progress{delete_flag}{rsync_mode_flag}{rsync_args} \"{src_str}\" \"{dst_str}\"")
-    print("\nWindows (Robocopy):")
-    print(f"  robocopy \"{src}\" \"{dst}\"{robocopy_files} /E /Z /FFT /R:2 /W:3{purge_flag}{robocopy_xd_str}{robocopy_xf_str}")
+    for target_dst in dst_list:
+        dst_str = str(target_dst).rstrip("/") + "/"
+        if len(dst_list) > 1:
+            print(f"\n--- Destination: {target_dst} ---")
+        print("POSIX / Linux (rsync):")
+        print(f"  rsync -avh --progress{delete_flag}{rsync_mode_flag}{ignore_existing_flag}{rsync_args} \"{src_str}\" \"{dst_str}\"")
+        print("\nWindows (Robocopy):")
+        print(f"  robocopy \"{src_path}\" \"{target_dst}\"{robocopy_files} /E /Z /FFT /R:2 /W:3{purge_flag}{new_only_flag}{robocopy_xd_str}{robocopy_xf_str}")
     print("=" * 60)
 
 
 # ----------------- COMPARISON & SYNC ENGINE ----------------- #
 
 def sync_directories(
-    src_dir: str,
-    dst_dir: str,
+    src_dir: str | Path,
+    dst_dir: str | Path | list[str | Path] | tuple[str | Path, ...] | None = None,
     direction: str = "push",            # "push" (Local -> CIFS) or "pull" (CIFS -> Local)
     compare_mode: str = "mtime_size",   # "mtime_size" (instant), "sample_hash" (fast), "full_hash" (slow), "size_only"
     mtime_tolerance: float = 2.0,       # Timestamp tolerance in seconds (handles FAT/NTFS/CIFS rounding)
@@ -361,16 +374,66 @@ def sync_directories(
     include_extensions: set[str] | tuple[str, ...] | list[str] | None = None,
     exclude_extensions: set[str] | tuple[str, ...] | list[str] | None = None,
     exclude_patterns: set[str] | tuple[str, ...] | list[str] | None = None,
+    dst_dirs: list[str | Path] | tuple[str | Path, ...] | None = None,
+    default_dst_dir: str | Path | None = None,
+    match_by_filename: bool = True,
+    copy_new_only: bool = False,
 ):
-    source_root = Path(src_dir).resolve()
-    target_root = Path(dst_dir).resolve()
+    if direction not in ("push", "pull"):
+        raise ValueError(f"Unknown direction: {direction}. Must be 'push' or 'pull'.")
+
+    if dst_dirs is not None:
+        raw_targets = dst_dirs if isinstance(dst_dirs, (list, tuple)) else [dst_dirs]
+    elif dst_dir is not None:
+        raw_targets = dst_dir if isinstance(dst_dir, (list, tuple)) else [dst_dir]
+    else:
+        raise ValueError("Either dst_dir or dst_dirs must be provided.")
+
+    if not raw_targets:
+        raise ValueError("At least one destination directory must be provided.")
+
+    target_roots = [Path(d).resolve() for d in raw_targets]
 
     if direction == "pull":
-        source_root, target_root = target_root, source_root
+        if len(target_roots) == 1:
+            source_root = target_roots[0]
+            target_roots = [Path(src_dir).resolve()]
+            default_target_root = target_roots[0]
+            direction = "push"
+        else:
+            local_target = Path(src_dir).resolve()
+            for r_root in target_roots:
+                print(f"\n[*] Pulling from library directory: {r_root}")
+                sync_directories(
+                    src_dir=r_root,
+                    dst_dir=local_target,
+                    direction="push",
+                    compare_mode=compare_mode,
+                    mtime_tolerance=mtime_tolerance,
+                    sync=sync,
+                    dry_run=dry_run,
+                    delete_orphan_dst=delete_orphan_dst,
+                    include_extensions=include_extensions,
+                    exclude_extensions=exclude_extensions,
+                    exclude_patterns=exclude_patterns,
+                    match_by_filename=match_by_filename,
+                    copy_new_only=copy_new_only,
+                )
+            return
+    else:
+        source_root = Path(src_dir).resolve()
+        default_target_root = Path(default_dst_dir).resolve() if default_dst_dir else target_roots[0]
 
     t_start = time.perf_counter()
-    print(f"[*] Direction: {source_root}  ==>  {target_root}")
+    if len(target_roots) == 1:
+        print(f"[*] Direction: {source_root}  ==>  {target_roots[0]}")
+    else:
+        target_list_str = ", ".join(str(t) for t in target_roots)
+        print(f"[*] Direction: {source_root}  ==>  [{target_list_str}]")
+
     print(f"[*] Compare Mode: {compare_mode}")
+    if copy_new_only:
+        print("[*] Mode: Copy net-new files only (skipping updates to existing files)")
     print(f"[*] Scanning source metadata...")
 
     t0 = time.perf_counter()
@@ -384,60 +447,139 @@ def sync_directories(
     t_src = time.perf_counter() - t0
     print(f"[*] Source scan completed in {t_src:.2f}s (found {len(src_keys)} files).")
 
-    # Fast targeted probe when not mirroring
-    t0 = time.perf_counter()
-    if direction == "push" and not delete_orphan_dst:
+    dst_metas: dict[Path, dict[str, FileInfo]] = {}
+
+    if len(target_roots) == 1 and not delete_orphan_dst and not match_by_filename:
+        t0 = time.perf_counter()
         print(f"[*] Probing target metadata for {len(src_keys)} candidate files...")
-        dst_meta = probe_metadata(target_root, src_keys)
-    else:
-        print(f"[*] Scanning target directory tree...")
-        dst_meta = scan_metadata(
-            target_root,
-            include_extensions=include_extensions,
-            exclude_extensions=exclude_extensions,
-            exclude_patterns=exclude_patterns,
-        )
-    t_dst = time.perf_counter() - t0
-    print(f"[*] Target scan/probe completed in {t_dst:.2f}s.")
-
-    src_keys = set(src_meta.keys())
-    dst_keys = set(dst_meta.keys())
-
-    to_copy_missing = sorted(src_keys - dst_keys)
-    orphans_in_dst = sorted(dst_keys - src_keys)
-    common_files = src_keys & dst_keys
-
-    # Check for size mismatches
-    size_mismatches = []
-    same_size_candidates = []
-
-    for f in common_files:
-        if src_meta[f].size != dst_meta[f].size:
-            size_mismatches.append(f)
+        dst_metas[target_roots[0]] = probe_metadata(target_roots[0], src_keys)
+        t_dst = time.perf_counter() - t0
+        print(f"[*] Target scan/probe completed in {t_dst:.2f}s.")
+    elif len(target_roots) == 1 and not delete_orphan_dst:
+        t0 = time.perf_counter()
+        print(f"[*] Probing target metadata for {len(src_keys)} candidate files...")
+        probed = probe_metadata(target_roots[0], src_keys)
+        missing_probed = src_keys - set(probed.keys())
+        if missing_probed:
+            print(f"[*] {len(missing_probed)} candidate(s) not at relative path, scanning target directory tree...")
+            dst_metas[target_roots[0]] = scan_metadata(
+                target_roots[0],
+                include_extensions=include_extensions,
+                exclude_extensions=exclude_extensions,
+                exclude_patterns=exclude_patterns,
+            )
         else:
-            same_size_candidates.append(f)
+            dst_metas[target_roots[0]] = probed
+        t_dst = time.perf_counter() - t0
+        print(f"[*] Target scan/probe completed in {t_dst:.2f}s.")
+    else:
+        for tr in target_roots:
+            if not tr.exists():
+                print(f"[!] WARNING: Target directory does not exist or is unmounted: {tr}")
+                dst_metas[tr] = {}
+                continue
+
+            t0 = time.perf_counter()
+            print(f"[*] Scanning target directory tree: {tr}...")
+            dst_metas[tr] = scan_metadata(
+                tr,
+                include_extensions=include_extensions,
+                exclude_extensions=exclude_extensions,
+                exclude_patterns=exclude_patterns,
+            )
+            t_dst = time.perf_counter() - t0
+            print(f"[*] Target scan for {tr.name or tr} completed in {t_dst:.2f}s (found {len(dst_metas[tr])} files).")
+
+    # Build filename lookup table for fallback matching across all library directories
+    filename_to_dst: dict[str, list[tuple[Path, str, FileInfo]]] = {}
+    if match_by_filename:
+        for tr in target_roots:
+            for rel, info in dst_metas[tr].items():
+                fname = Path(rel).name.lower()
+                filename_to_dst.setdefault(fname, []).append((tr, rel, info))
+
+    to_copy_missing: list[tuple[str, Path, str]] = []
+    matched_dst_entries: set[tuple[Path, str]] = set()
+    size_mismatches: list[tuple[str, Path, str, str, FileInfo]] = []
+    same_size_candidates: list[tuple[str, Path, str, str, FileInfo]] = []
+
+    for src_rel in sorted(src_meta.keys()):
+        src_info = src_meta[src_rel]
+        matched: tuple[Path, str, FileInfo, str] | None = None
+
+        # Step 1: Check exact relative path match
+        for tr in target_roots:
+            if src_rel in dst_metas[tr]:
+                matched = (tr, src_rel, dst_metas[tr][src_rel], "rel_path")
+                break
+
+        # Step 2: Fallback to filename/basename matching across all targets
+        if matched is None and match_by_filename:
+            src_fname = Path(src_rel).name.lower()
+            candidates = filename_to_dst.get(src_fname, [])
+            if candidates:
+                size_matched = [c for c in candidates if c[2].size == src_info.size]
+                best = size_matched[0] if size_matched else candidates[0]
+                matched = (best[0], best[1], best[2], "filename")
+
+        if matched is None:
+            to_copy_missing.append((src_rel, default_target_root, src_rel))
+        else:
+            tr, dst_rel, dst_info, match_reason = matched
+            matched_dst_entries.add((tr, dst_rel))
+            if not copy_new_only:
+                if src_info.size != dst_info.size:
+                    size_mismatches.append((src_rel, tr, dst_rel, match_reason, dst_info))
+                else:
+                    same_size_candidates.append((src_rel, tr, dst_rel, match_reason, dst_info))
 
     # Detect updates based on compare_mode
-    to_update = []
-    if compare_mode == "size_only":
-        to_update = sorted(size_mismatches)
-    elif compare_mode == "mtime_size":
-        mtime_mismatches = [
-            f for f in same_size_candidates
-            if abs(src_meta[f].mtime - dst_meta[f].mtime) > mtime_tolerance
-        ]
-        to_update = sorted(size_mismatches + mtime_mismatches)
-    elif compare_mode in ("sample_hash", "full_hash"):
-        print(f"[*] Verifying checksums ({compare_mode}) on {len(same_size_candidates)} matching files...")
-        src_hashes = hash_candidates_parallel(source_root, same_size_candidates, mode=compare_mode)
-        dst_hashes = hash_candidates_parallel(target_root, same_size_candidates, mode=compare_mode, max_workers=4)
-        hash_mismatches = [
-            f for f in same_size_candidates
-            if src_hashes.get(f) != dst_hashes.get(f)
-        ]
-        to_update = sorted(size_mismatches + hash_mismatches)
+    to_update: list[tuple[str, Path, str, str, FileInfo]] = []
+    if not copy_new_only:
+        if compare_mode == "size_only":
+            to_update = sorted(size_mismatches, key=lambda x: x[0])
+        elif compare_mode == "mtime_size":
+            mtime_mismatches = [
+                c for c in same_size_candidates
+                if abs(src_meta[c[0]].mtime - c[4].mtime) > mtime_tolerance
+            ]
+            to_update = sorted(size_mismatches + mtime_mismatches, key=lambda x: x[0])
+        elif compare_mode in ("sample_hash", "full_hash"):
+            print(f"[*] Verifying checksums ({compare_mode}) on {len(same_size_candidates)} matching files...")
+            src_hashes = hash_candidates_parallel(
+                source_root,
+                [c[0] for c in same_size_candidates],
+                mode=compare_mode
+            )
+            dst_hashes: dict[tuple[Path, str], str] = {}
+            for tr in target_roots:
+                tr_rels = [c[2] for c in same_size_candidates if c[1] == tr]
+                if tr_rels:
+                    h = hash_candidates_parallel(tr, tr_rels, mode=compare_mode, max_workers=4)
+                    for rel, fhash in h.items():
+                        dst_hashes[(tr, rel)] = fhash
+
+            hash_mismatches = [
+                c for c in same_size_candidates
+                if src_hashes.get(c[0]) != dst_hashes.get((c[1], c[2]))
+            ]
+            to_update = sorted(size_mismatches + hash_mismatches, key=lambda x: x[0])
+        else:
+            raise ValueError(
+                f"Unknown compare_mode: {compare_mode}. Choose from 'mtime_size', 'sample_hash', 'full_hash', 'size_only'"
+            )
     else:
-        raise ValueError(f"Unknown compare_mode: {compare_mode}. Choose from 'mtime_size', 'sample_hash', 'full_hash', 'size_only'")
+        if compare_mode not in ("size_only", "mtime_size", "sample_hash", "full_hash"):
+            raise ValueError(
+                f"Unknown compare_mode: {compare_mode}. Choose from 'mtime_size', 'sample_hash', 'full_hash', 'size_only'"
+            )
+
+    orphans_in_dst: list[tuple[Path, str]] = []
+    if delete_orphan_dst:
+        for tr in target_roots:
+            for rel in sorted(dst_metas[tr].keys()):
+                if (tr, rel) not in matched_dst_entries:
+                    orphans_in_dst.append((tr, rel))
 
     # ----------------- EXECUTION PLAN REPORT ----------------- #
     print("\n" + "=" * 60)
@@ -459,22 +601,40 @@ def sync_directories(
     # ----------------- EXECUTION ----------------- #
     action_label = "[DRY-RUN]" if (dry_run or not sync) else "[EXECUTING]"
 
-    # 1. Copy Missing & Modified Files
-    all_transfers = [(f, "CREATE") for f in to_copy_missing] + [(f, "UPDATE") for f in to_update]
-    for rel_path, action in all_transfers:
-        s_file = source_root / rel_path
-        d_file = target_root / rel_path
-        print(f"  {action_label} {action}: {rel_path}")
+    # 1. Copy Missing Files
+    for src_rel, tr, dst_rel in to_copy_missing:
+        s_file = source_root / src_rel
+        d_file = tr / dst_rel
+        target_info = f" -> {tr.name}/{dst_rel}" if len(target_roots) > 1 else ""
+        print(f"  {action_label} CREATE: {src_rel}{target_info}")
 
         if sync and not dry_run:
             d_file.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(s_file, d_file)  # copy2 preserves timestamps and metadata
 
-    # 2. Handle Extra Files in Destination (Mirroring)
+    # 2. Update Modified Files (skipped if copy_new_only)
+    if not copy_new_only:
+        for src_rel, tr, dst_rel, reason, _ in to_update:
+            s_file = source_root / src_rel
+            d_file = tr / dst_rel
+            if reason == "filename":
+                target_info = f" (matched by filename -> {tr.name}/{dst_rel})"
+            elif len(target_roots) > 1:
+                target_info = f" -> {tr.name}/{dst_rel}"
+            else:
+                target_info = ""
+            print(f"  {action_label} UPDATE: {src_rel}{target_info}")
+
+            if sync and not dry_run:
+                d_file.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(s_file, d_file)
+
+    # 3. Handle Extra Files in Destination (Mirroring)
     if delete_orphan_dst:
-        for rel_path in orphans_in_dst:
-            d_file = target_root / rel_path
-            print(f"  {action_label} DELETE: {rel_path}")
+        for tr, rel_path in orphans_in_dst:
+            d_file = tr / rel_path
+            target_info = f" ({tr.name}/{rel_path})" if len(target_roots) > 1 else f": {rel_path}"
+            print(f"  {action_label} DELETE{target_info}")
 
             if sync and not dry_run:
                 if d_file.is_file():
@@ -488,24 +648,37 @@ def sync_directories(
 
 if __name__ == "__main__":
     LOCAL_PATH = "/home/mike/Downloads/"       # e.g., "C:/LocalProject"
-    CIFS_MOUNT = "/run/user/1000/gvfs/smb-share:server=192.168.86.210,share=f"     # e.g., "Z:/RemoteProject"
+
+    # Single path or list of multiple Jellyfin library directories
+    CIFS_MOUNTS = [
+        "/media/mike/Media",
+        #"/run/user/1000/gvfs/smb-share:server=192.168.86.210,share=f",
+        #"/run/user/1000/gvfs/smb-share:server=192.168.86.210,share=jellyfin",
+        # Or individual library subdirectories:
+        # "/run/user/1000/gvfs/smb-share:server=192.168.86.210,share=jellyfin/Movies",
+        # "/run/user/1000/gvfs/smb-share:server=192.168.86.210,share=jellyfin/Television",
+        # "/run/user/1000/gvfs/smb-share:server=192.168.86.210,share=f",
+    ]
 
     # Step 1: Print Native OS Commands (Optional)
     print_cli_command(
         Path(LOCAL_PATH),
-        Path(CIFS_MOUNT),
+        CIFS_MOUNTS,
         mirror=False,
         compare_mode="mtime_size",
         include_extensions=MEDIA_EXTENSIONS,
+        copy_new_only=True,
     )
 
     # Step 2: Compare & Sync via Python
     sync_directories(
         src_dir=LOCAL_PATH,
-        dst_dir=CIFS_MOUNT,
+        dst_dirs=CIFS_MOUNTS,      # Checks across all library directories
         direction="push",          # "push" sends Local -> CIFS
         compare_mode="mtime_size", # "mtime_size" (instant), "sample_hash" (fast), "full_hash" (slow), "size_only"
         include_extensions=MEDIA_EXTENSIONS,
+        match_by_filename=True,    # Match by relative path first, fallback to filename
+        copy_new_only=True,        # Only copy net new files, never update existing files
         sync=False,                # Set to True to apply changes
         dry_run=True,              # Set to False to disable preview safety
         delete_orphan_dst=False    # Set to True to delete remote files not on local
