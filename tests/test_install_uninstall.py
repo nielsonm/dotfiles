@@ -118,7 +118,7 @@ class TestInstallUninstallScripts(unittest.TestCase):
             self.assertIn("30 2 * * * /usr/local/bin/my_backup.sh", installed_cron)
             self.assertIn("# BEGIN DOTFILES MANAGED BLOCK", installed_cron)
             self.assertIn("sync_active_config.sh", installed_cron)
-            self.assertIn("backup_vscode.sh", installed_cron)
+            self.assertIn("vscode_sync.sh", installed_cron)
             self.assertIn("# END DOTFILES MANAGED BLOCK", installed_cron)
 
             # 2. Test idempotency: running install.sh again replaces without duplicating
